@@ -2,6 +2,7 @@
   "name": "lampung-smart-waste",
   "version": "1.0.0",
   "description": "Sistem Pelaporan dan Penanganan Sampah Digital Kota Bandar Lampung Berbasis Smart City",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
@@ -16,7 +17,7 @@
   "author": "Aura Azhar Naila & Dr. Erliyan Redy Susanto, M.Kom",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   }
 }

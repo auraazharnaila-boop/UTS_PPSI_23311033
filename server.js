@@ -1,26 +1,18 @@
-// server.js - REST API Backend Server untuk Lampung Smart Waste
-// Dibuat sesuai PRD_LAMPUNG_SMART_WASTE.md dan PPSI Standard
-
-const http = require('http');
-const fs = require('fs');
+// server.js - REST API & Web Server Lampung Smart Waste (Express.js)
+const express = require('express');
+const cors = require('cors');
 const path = require('path');
-const url = require('url');
-const crypto = require('crypto');
+const fs = require('fs');
 
-const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'database_store.json');
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
+const app = express();
 
-try {
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-} catch (e) {
-  // Ignore in read-only environments like Vercel
-}
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data awal (Seed Data) sesuai spesifikasi PRD & Lokasi Riil Bandar Lampung
-const initialData = {
+// In-Memory Seed Data (Persisten dalam sesi & Aman untuk Vercel Read-Only)
+let db = {
   users: [
     {
       id: 'usr-001',
@@ -31,8 +23,7 @@ const initialData = {
       role: 'masyarakat',
       is_active: true,
       points: 340,
-      level: 'Warga Peduli Lingkungan',
-      created_at: '2026-11-01T08:00:00Z'
+      level: 'Warga Peduli Lingkungan'
     },
     {
       id: 'usr-002',
@@ -43,9 +34,7 @@ const initialData = {
       role: 'petugas',
       is_active: true,
       fleet_id: 'ARM-DLH-07',
-      fleet_name: 'Dump Truck Isuzu Elf 4.5T',
-      operational_status: 'Aktif - Operasi Lapangan',
-      created_at: '2026-10-15T08:00:00Z'
+      fleet_name: 'Dump Truck Isuzu Elf 4.5T'
     },
     {
       id: 'usr-003',
@@ -56,9 +45,7 @@ const initialData = {
       role: 'petugas',
       is_active: true,
       fleet_id: 'ARM-DLH-12',
-      fleet_name: 'Compactor Truck 6T',
-      operational_status: 'Siaga Pangkalan',
-      created_at: '2026-10-15T08:00:00Z'
+      fleet_name: 'Compactor Truck 6T'
     },
     {
       id: 'usr-004',
@@ -68,8 +55,7 @@ const initialData = {
       password_hash: 'admin123',
       role: 'admin',
       is_active: true,
-      position: 'Kepala Pusat Kendali Smart City DLH',
-      created_at: '2026-10-01T08:00:00Z'
+      position: 'Kepala Pusat Kendali Smart City DLH'
     }
   ],
   categories: [
@@ -211,162 +197,138 @@ const initialData = {
   ]
 };
 
-// Fungsi pembacaan & penyimpanan basis data JSON
-function loadData() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const content = fs.readFileSync(DB_FILE, 'utf8');
-      return JSON.parse(content);
+// ==========================================
+// REST API ENDPOINTS
+// ==========================================
+app.get('/api/v1/categories', (req, res) => {
+  res.json({ data: db.categories });
+});
+
+app.get('/api/v1/admin/reports', (req, res) => {
+  res.json({ data: db.reports, total: db.reports.length });
+});
+
+app.get('/api/v1/reports', (req, res) => {
+  res.json({ data: db.reports, total: db.reports.length });
+});
+
+app.post('/api/v1/reports', (req, res) => {
+  const body = req.body;
+  const category = db.categories.find(c => c.id === body.category_id) || db.categories[0];
+  const newReport = {
+    id: 'rep-' + Date.now().toString(36),
+    ticket_number: 'LSW-2026-' + (db.reports.length + 90).toString().padStart(3, '0'),
+    reporter_id: 'usr-001',
+    reporter_name: body.is_anonymous ? 'Warga Anonim' : 'Aura Azhar Naila',
+    category_id: category.id,
+    category_name: category.name,
+    title: body.title || `Laporan ${category.name}`,
+    description: body.description || '',
+    address: body.address || 'Kota Bandar Lampung',
+    latitude: parseFloat(body.latitude) || -5.4292,
+    longitude: parseFloat(body.longitude) || 105.2625,
+    estimated_volume: body.estimated_volume || '± 1.0 m³',
+    priority: 'Sedang',
+    status: 'Menunggu Verifikasi',
+    photo_url: body.photo_url || 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?w=800',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  db.reports.unshift(newReport);
+  res.status(201).json({ data: newReport });
+});
+
+app.patch('/api/v1/admin/reports/:id/review', (req, res) => {
+  const report = db.reports.find(r => r.id === req.params.id);
+  if (!report) return res.status(404).json({ error: 'Laporan tidak ditemukan' });
+  const { action, admin_note } = req.body;
+  if (action === 'VERIFIKASI') report.status = 'Terverifikasi';
+  else if (action === 'TOLAK') report.status = 'Ditolak';
+  else if (action === 'TUTUP') report.status = 'Ditutup';
+  if (admin_note) report.admin_note = admin_note;
+  report.updated_at = new Date().toISOString();
+  res.json({ data: report });
+});
+
+app.patch('/api/v1/assignments/:id/status', (req, res) => {
+  const report = db.reports.find(r => r.id === req.params.id);
+  if (!report) return res.status(404).json({ error: 'Laporan tidak ditemukan' });
+  const { status, officer_note, evidence_after } = req.body;
+  if (status) report.status = status;
+  if (officer_note) report.officer_note = officer_note;
+  if (evidence_after) report.evidence_after = evidence_after;
+  report.updated_at = new Date().toISOString();
+  res.json({ data: report });
+});
+
+app.get('/api/v1/notifications', (req, res) => {
+  res.json({ data: db.notifications });
+});
+
+app.get('/api/v1/admin/dashboard/summary', (req, res) => {
+  res.json({
+    data: {
+      total: db.reports.length,
+      in_progress: db.reports.filter(r => ['Ditugaskan', 'Dalam Penanganan'].includes(r.status)).length,
+      completed: db.reports.filter(r => r.status === 'Selesai').length
     }
-  } catch (err) {}
-  saveData(initialData);
-  return initialData;
-}
-
-function saveData(data) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    // Fail gracefully on read-only cloud/serverless environments
-  }
-}
-
-// Inisialisasi DB
-let db = loadData();
-
-// Helper Response JSON
-function sendJSON(res, statusCode, body) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-user-email, x-user-name'
   });
-  res.end(JSON.stringify(body));
-}
+});
 
-// Helper Parse Request Body
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-      if (body.length > 10 * 1024 * 1024) reject(new Error('Payload too large'));
-    });
-    req.on('end', () => {
-      try {
-        if (!body) return resolve({});
-        resolve(JSON.parse(body));
-      } catch (err) {
-        resolve({});
-      }
-    });
-    req.on('error', reject);
-  });
-}
+// ==========================================
+// STATIC FILES & HTML PAGES
+// ==========================================
+app.use(express.static(path.join(__dirname)));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.md': 'text/markdown; charset=utf-8'
-};
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-const requestHandler = async (req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
-  const method = req.method.toUpperCase();
+app.get('/customer', (req, res) => {
+  res.sendFile(path.join(__dirname, 'customer.html'));
+});
 
-  if (method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-user-email, x-user-name'
-    });
-    return res.end();
+app.get('/customer.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'customer.html'));
+});
+
+app.get('/petugas', (req, res) => {
+  res.sendFile(path.join(__dirname, 'petugas.html'));
+});
+
+app.get('/petugas.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'petugas.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Fallback untuk SPA routing
+app.get('*', (req, res) => {
+  const requestedFile = path.join(__dirname, req.path);
+  if (fs.existsSync(requestedFile) && fs.statSync(requestedFile).isFile()) {
+    return res.sendFile(requestedFile);
   }
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-  // REST API
-  if (pathname === '/api/v1/auth/login' && method === 'POST') {
-    const { email, password } = await parseBody(req);
-    const user = db.users.find(u => u.email.toLowerCase() === (email || '').toLowerCase().trim());
-    if (!user || user.password_hash !== password) {
-      return sendJSON(res, 401, { error: { code: 'INVALID_CREDENTIALS', message: 'Email atau kata sandi tidak sesuai.' } });
-    }
-    return sendJSON(res, 200, { data: { token: 'jwt_' + crypto.randomBytes(16).toString('hex'), user } });
-  }
+// Export untuk Vercel Serverless Function
+module.exports = app;
 
-  if (pathname === '/api/v1/categories' && method === 'GET') {
-    return sendJSON(res, 200, { data: db.categories.filter(c => c.is_active) });
-  }
-
-  if (pathname === '/api/v1/reports' && method === 'POST') {
-    const body = await parseBody(req);
-    const category = db.categories.find(c => c.id === body.category_id) || db.categories[0];
-    const newReport = {
-      id: 'rep-' + Date.now().toString(36),
-      ticket_number: 'LSW-2026-' + (db.reports.length + 90).toString().padStart(3, '0'),
-      reporter_id: 'usr-001',
-      reporter_name: body.is_anonymous ? 'Warga Anonim' : 'Aura Azhar Naila',
-      category_id: category.id,
-      category_name: category.name,
-      title: body.title || `Laporan ${category.name}`,
-      description: body.description || '',
-      address: body.address || 'Kota Bandar Lampung',
-      latitude: parseFloat(body.latitude) || -5.4292,
-      longitude: parseFloat(body.longitude) || 105.2625,
-      estimated_volume: body.estimated_volume || '± 1.0 m³',
-      priority: 'Sedang',
-      status: 'Menunggu Verifikasi',
-      photo_url: body.photo_url || 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?w=800',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    db.reports.unshift(newReport);
-    saveData(db);
-    return sendJSON(res, 201, { data: newReport });
-  }
-
-  if (pathname === '/api/v1/admin/reports' && method === 'GET') {
-    return sendJSON(res, 200, { data: db.reports, total: db.reports.length });
-  }
-
-  if (pathname === '/api/v1/notifications' && method === 'GET') {
-    return sendJSON(res, 200, { data: db.notifications });
-  }
-
-  // Static File Serving
-  let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-  if (safePath === '/' || safePath === '\\') safePath = 'index.html';
-
-  const filePath = path.join(__dirname, safePath);
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('404 Not Found: ' + pathname);
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
-    fs.createReadStream(filePath).pipe(res);
-  });
-};
-
-const server = http.createServer(requestHandler);
-
+// Jalankan server lokal jika dieksekusi langsung
 if (require.main === module) {
-  server.listen(PORT, () => {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🌿 Lampung Smart Waste Server is running on port ${PORT}`);
+    console.log(`🌿 Lampung Smart Waste Server running on port ${PORT}`);
     console.log(`📡 URL Master:    http://localhost:${PORT}`);
     console.log(`👥 Portal Warga:  http://localhost:${PORT}/customer.html`);
     console.log(`=======================================================`);
   });
 }
-
-module.exports = server;
