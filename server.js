@@ -11,8 +11,12 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'database_store.json');
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+} catch (e) {
+  // Ignore in read-only environments like Vercel
 }
 
 // Data awal (Seed Data) sesuai spesifikasi PRD & Lokasi Riil Bandar Lampung
@@ -170,10 +174,6 @@ const initialData = {
       assigned_officer_id: null,
       assigned_officer_name: null,
       photo_url: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop&q=60',
-      evidence_before: null,
-      evidence_after: null,
-      admin_note: null,
-      officer_note: null,
       created_at: '2026-11-10T14:10:00Z',
       updated_at: '2026-11-10T14:10:00Z'
     },
@@ -195,41 +195,8 @@ const initialData = {
       assigned_officer_id: null,
       assigned_officer_name: null,
       photo_url: 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?w=800&auto=format&fit=crop&q=60',
-      evidence_before: null,
-      evidence_after: null,
-      admin_note: 'Laporan valid, menunggu penugasan regu terdekat Sukarame.',
-      officer_note: null,
       created_at: '2026-11-10T11:00:00Z',
       updated_at: '2026-11-10T11:45:00Z'
-    }
-  ],
-  status_histories: [
-    {
-      id: 'sh-1',
-      report_id: 'rep-089',
-      changed_by: 'Dr. Erliyan Redy Susanto, M.Kom',
-      old_status: 'Menunggu Verifikasi',
-      new_status: 'Terverifikasi',
-      note: 'Laporan diverifikasi akurat oleh Admin.',
-      created_at: '2026-11-09T09:00:00Z'
-    },
-    {
-      id: 'sh-2',
-      report_id: 'rep-089',
-      changed_by: 'Dr. Erliyan Redy Susanto, M.Kom',
-      old_status: 'Terverifikasi',
-      new_status: 'Ditugaskan',
-      note: 'Ditugaskan ke Petugas Budi Santoso (Regu Rajabasa 01).',
-      created_at: '2026-11-09T09:30:00Z'
-    },
-    {
-      id: 'sh-3',
-      report_id: 'rep-089',
-      changed_by: 'Budi Santoso',
-      old_status: 'Ditugaskan',
-      new_status: 'Dalam Penanganan',
-      note: 'Armada ARM-DLH-07 tiba di lokasi, mulai pengerjaan.',
-      created_at: '2026-11-10T09:30:00Z'
     }
   ],
   notifications: [
@@ -240,22 +207,6 @@ const initialData = {
       message: 'Laporan Anda LSW-2026-089 di Jl. Raden Intan saat ini sedang Dalam Penanganan oleh Budi Santoso.',
       read_at: null,
       created_at: '2026-11-10T09:30:00Z'
-    },
-    {
-      id: 'notif-2',
-      user_id: 'usr-002',
-      title: 'Tugas Baru Ditetapkan',
-      message: 'Anda mendapatkan tugas penanganan sampah baru di Jl. Raden Intan (LSW-2026-089).',
-      read_at: '2026-11-09T10:00:00Z',
-      created_at: '2026-11-09T09:30:00Z'
-    },
-    {
-      id: 'notif-3',
-      user_id: 'usr-004',
-      title: 'Laporan Baru Masuk',
-      message: 'Laporan baru LSW-2026-092 di Jl. Sultan Agung membutuhkan verifikasi.',
-      read_at: null,
-      created_at: '2026-11-10T14:10:00Z'
     }
   ]
 };
@@ -267,9 +218,7 @@ function loadData() {
       const content = fs.readFileSync(DB_FILE, 'utf8');
       return JSON.parse(content);
     }
-  } catch (err) {
-    console.error('Error reading database file:', err);
-  }
+  } catch (err) {}
   saveData(initialData);
   return initialData;
 }
@@ -278,7 +227,7 @@ function saveData(data) {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error('Error saving database:', err);
+    // Fail gracefully on read-only cloud/serverless environments
   }
 }
 
@@ -291,7 +240,7 @@ function sendJSON(res, statusCode, body) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-user-email, x-user-name'
   });
   res.end(JSON.stringify(body));
 }
@@ -302,9 +251,7 @@ function parseBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
-      if (body.length > 10 * 1024 * 1024) { // 10MB limit
-        reject(new Error('Payload too large'));
-      }
+      if (body.length > 10 * 1024 * 1024) reject(new Error('Payload too large'));
     });
     req.on('end', () => {
       try {
@@ -318,7 +265,6 @@ function parseBody(req) {
   });
 }
 
-// MIME Types untuk Static Files
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -332,426 +278,95 @@ const MIME_TYPES = {
   '.md': 'text/markdown; charset=utf-8'
 };
 
-// HTTP Server
-const server = http.createServer(async (req, res) => {
+const requestHandler = async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   const method = req.method.toUpperCase();
 
-  // Handle CORS Preflight
   if (method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-user-email, x-user-name'
     });
     return res.end();
   }
 
-  // ==========================================
-  // REST API ROUTING (/api/v1/...)
-  // ==========================================
-
-  // 1. Auth: Login
+  // REST API
   if (pathname === '/api/v1/auth/login' && method === 'POST') {
     const { email, password } = await parseBody(req);
     const user = db.users.find(u => u.email.toLowerCase() === (email || '').toLowerCase().trim());
     if (!user || user.password_hash !== password) {
-      return sendJSON(res, 401, {
-        error: { code: 'INVALID_CREDENTIALS', message: 'Email atau kata sandi tidak sesuai.' }
-      });
+      return sendJSON(res, 401, { error: { code: 'INVALID_CREDENTIALS', message: 'Email atau kata sandi tidak sesuai.' } });
     }
-    const token = 'jwt_' + crypto.randomBytes(16).toString('hex');
-    return sendJSON(res, 200, {
-      data: {
-        token,
-        user: {
-          id: user.id,
-          full_name: user.full_name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          points: user.points,
-          level: user.level,
-          fleet_id: user.fleet_id,
-          fleet_name: user.fleet_name
-        }
-      }
-    });
+    return sendJSON(res, 200, { data: { token: 'jwt_' + crypto.randomBytes(16).toString('hex'), user } });
   }
 
-  // 2. Auth: Register
-  if (pathname === '/api/v1/auth/register' && method === 'POST') {
-    const { full_name, email, password, phone } = await parseBody(req);
-    if (!full_name || !email || !password) {
-      return sendJSON(res, 422, {
-        error: { code: 'VALIDATION_ERROR', message: 'Nama lengkap, email, dan kata sandi wajib diisi.' }
-      });
-    }
-    const existing = db.users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
-    if (existing) {
-      return sendJSON(res, 409, {
-        error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Email sudah terdaftar.' }
-      });
-    }
-    const newUser = {
-      id: 'usr-' + Date.now().toString(36),
-      full_name,
-      email: email.toLowerCase().trim(),
-      phone: phone || '',
-      password_hash: password,
-      role: 'masyarakat',
-      is_active: true,
-      points: 100, // Bonus sambutan poin warga
-      level: 'Warga Baru',
-      created_at: new Date().toISOString()
-    };
-    db.users.push(newUser);
-    saveData(db);
-    return sendJSON(res, 201, {
-      data: {
-        message: 'Registrasi berhasil. Silakan masuk.',
-        user: { id: newUser.id, full_name: newUser.full_name, email: newUser.email, role: newUser.role }
-      }
-    });
-  }
-
-  // 3. Auth: Current User Profile (/api/v1/me)
-  if (pathname === '/api/v1/me' && method === 'GET') {
-    const emailHeader = req.headers['x-user-email'];
-    const user = db.users.find(u => u.email.toLowerCase() === (emailHeader || 'warga@lampung.go.id').toLowerCase());
-    if (!user) {
-      return sendJSON(res, 404, { error: { code: 'USER_NOT_FOUND', message: 'Pengguna tidak ditemukan' } });
-    }
-    return sendJSON(res, 200, { data: user });
-  }
-
-  // 4. Categories: List
   if (pathname === '/api/v1/categories' && method === 'GET') {
     return sendJSON(res, 200, { data: db.categories.filter(c => c.is_active) });
   }
 
-  // 5. Reports: Create (/api/v1/reports)
   if (pathname === '/api/v1/reports' && method === 'POST') {
     const body = await parseBody(req);
-    const { title, category_id, description, address, latitude, longitude, estimated_volume, photo_url, is_anonymous } = body;
-    
-    if (!description || !address) {
-      return sendJSON(res, 422, {
-        error: { code: 'VALIDATION_ERROR', message: 'Deskripsi dan alamat kejadian wajib diisi.' }
-      });
-    }
-
-    const reporterEmail = req.headers['x-user-email'] || 'warga@lampung.go.id';
-    const reporter = db.users.find(u => u.email.toLowerCase() === reporterEmail.toLowerCase()) || db.users[0];
-    const category = db.categories.find(c => c.id === category_id) || db.categories[0];
-
-    const ticketNumber = 'LSW-2026-' + (db.reports.length + 90).toString().padStart(3, '0');
+    const category = db.categories.find(c => c.id === body.category_id) || db.categories[0];
     const newReport = {
       id: 'rep-' + Date.now().toString(36),
-      ticket_number: ticketNumber,
-      reporter_id: reporter.id,
-      reporter_name: is_anonymous ? 'Warga Anonim' : reporter.full_name,
+      ticket_number: 'LSW-2026-' + (db.reports.length + 90).toString().padStart(3, '0'),
+      reporter_id: 'usr-001',
+      reporter_name: body.is_anonymous ? 'Warga Anonim' : 'Aura Azhar Naila',
       category_id: category.id,
       category_name: category.name,
-      title: title || `Laporan ${category.name}`,
-      description,
-      address,
-      latitude: parseFloat(latitude) || -5.4292,
-      longitude: parseFloat(longitude) || 105.2625,
-      estimated_volume: estimated_volume || '± 1.0 m³',
+      title: body.title || `Laporan ${category.name}`,
+      description: body.description || '',
+      address: body.address || 'Kota Bandar Lampung',
+      latitude: parseFloat(body.latitude) || -5.4292,
+      longitude: parseFloat(body.longitude) || 105.2625,
+      estimated_volume: body.estimated_volume || '± 1.0 m³',
       priority: 'Sedang',
       status: 'Menunggu Verifikasi',
-      assigned_officer_id: null,
-      assigned_officer_name: null,
-      photo_url: photo_url || 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?w=800&auto=format&fit=crop&q=60',
-      evidence_before: photo_url || null,
-      evidence_after: null,
-      admin_note: null,
-      officer_note: null,
+      photo_url: body.photo_url || 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?w=800',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-
     db.reports.unshift(newReport);
-
-    // Tambah poin bagi warga
-    if (reporter.points !== undefined) {
-      reporter.points += 25;
-    }
-
-    // Catat notifikasi untuk Admin
-    db.notifications.unshift({
-      id: 'notif-' + Date.now(),
-      user_id: 'usr-004',
-      title: 'Laporan Baru Masuk',
-      message: `Tiket baru ${newReport.ticket_number} masuk dari ${newReport.address}`,
-      read_at: null,
-      created_at: new Date().toISOString()
-    });
-
     saveData(db);
     return sendJSON(res, 201, { data: newReport });
   }
 
-  // 6. Reports: Mine (Masyarakat)
-  if (pathname === '/api/v1/reports/mine' && method === 'GET') {
-    const reporterEmail = req.headers['x-user-email'] || 'warga@lampung.go.id';
-    const reporter = db.users.find(u => u.email.toLowerCase() === reporterEmail.toLowerCase()) || db.users[0];
-    const myReports = db.reports.filter(r => r.reporter_id === reporter.id);
-    return sendJSON(res, 200, { data: myReports });
-  }
-
-  // 7. Reports: All (Admin & Peta Publik)
   if (pathname === '/api/v1/admin/reports' && method === 'GET') {
-    const statusFilter = parsedUrl.query.status;
-    let list = db.reports;
-    if (statusFilter && statusFilter !== 'Semua') {
-      list = list.filter(r => r.status === statusFilter);
-    }
-    return sendJSON(res, 200, { data: list, total: list.length });
+    return sendJSON(res, 200, { data: db.reports, total: db.reports.length });
   }
 
-  // 8. Officer Assignments (/api/v1/officer/assignments)
-  if (pathname === '/api/v1/officer/assignments' && method === 'GET') {
-    const officerEmail = req.headers['x-user-email'] || 'petugas@dlh.bandarlampungkota.go.id';
-    const officer = db.users.find(u => u.email.toLowerCase() === officerEmail.toLowerCase()) || db.users[1];
-    const assignments = db.reports.filter(r => r.assigned_officer_id === officer.id || r.status === 'Ditugaskan' || r.status === 'Dalam Penanganan');
-    return sendJSON(res, 200, { data: assignments, officer });
-  }
-
-  // 9. Officer Status Update & Proof Upload (/api/v1/assignments/:id/status)
-  const matchOfficerPatch = pathname.match(/^\/api\/v1\/assignments\/([^/]+)\/status$/);
-  if (matchOfficerPatch && method === 'PATCH') {
-    const reportId = matchOfficerPatch[1];
-    const report = db.reports.find(r => r.id === reportId || r.ticket_number === reportId);
-    if (!report) {
-      return sendJSON(res, 404, { error: { code: 'REPORT_NOT_FOUND', message: 'Laporan tidak ditemukan' } });
-    }
-    const { status, officer_note, evidence_after } = await parseBody(req);
-    const oldStatus = report.status;
-    if (status) report.status = status;
-    if (officer_note) report.officer_note = officer_note;
-    if (evidence_after) report.evidence_after = evidence_after;
-    report.updated_at = new Date().toISOString();
-
-    db.status_histories.unshift({
-      id: 'sh-' + Date.now(),
-      report_id: report.id,
-      changed_by: req.headers['x-user-name'] || 'Petugas Lapangan DLH',
-      old_status: oldStatus,
-      new_status: report.status,
-      note: officer_note || `Pembaruan status ke ${report.status}`,
-      created_at: new Date().toISOString()
-    });
-
-    // Kirim notifikasi ke pelapor
-    db.notifications.unshift({
-      id: 'notif-' + Date.now(),
-      user_id: report.reporter_id,
-      title: `Progres Laporan: ${report.ticket_number}`,
-      message: `Status laporan Anda kini '${report.status}'. Petugas: ${report.assigned_officer_name || 'DLH'}`,
-      read_at: null,
-      created_at: new Date().toISOString()
-    });
-
-    saveData(db);
-    return sendJSON(res, 200, { data: report });
-  }
-
-  // 10. Admin Review (/api/v1/admin/reports/:id/review)
-  const matchAdminReview = pathname.match(/^\/api\/v1\/admin\/reports\/([^/]+)\/review$/);
-  if (matchAdminReview && method === 'PATCH') {
-    const reportId = matchAdminReview[1];
-    const report = db.reports.find(r => r.id === reportId || r.ticket_number === reportId);
-    if (!report) {
-      return sendJSON(res, 404, { error: { code: 'REPORT_NOT_FOUND', message: 'Laporan tidak ditemukan' } });
-    }
-    const { action, admin_note, officer_id } = await parseBody(req);
-    const oldStatus = report.status;
-
-    if (action === 'VERIFIKASI') {
-      report.status = 'Terverifikasi';
-    } else if (action === 'TOLAK') {
-      report.status = 'Ditolak';
-    } else if (action === 'PERBAIKAN') {
-      report.status = 'Perlu Perbaikan';
-    } else if (action === 'TUTUP') {
-      report.status = 'Ditutup';
-    }
-
-    if (admin_note) report.admin_note = admin_note;
-
-    if (officer_id) {
-      const officer = db.users.find(u => u.id === officer_id);
-      if (officer) {
-        report.assigned_officer_id = officer.id;
-        report.assigned_officer_name = officer.full_name;
-        report.status = 'Ditugaskan';
-      }
-    }
-
-    report.updated_at = new Date().toISOString();
-
-    db.status_histories.unshift({
-      id: 'sh-' + Date.now(),
-      report_id: report.id,
-      changed_by: req.headers['x-user-name'] || 'Admin DLH Bandar Lampung',
-      old_status: oldStatus,
-      new_status: report.status,
-      note: admin_note || `Verifikasi admin: ${report.status}`,
-      created_at: new Date().toISOString()
-    });
-
-    saveData(db);
-    return sendJSON(res, 200, { data: report });
-  }
-
-  // 11. Admin Assign Officer (/api/v1/admin/reports/:id/assignments)
-  const matchAdminAssign = pathname.match(/^\/api\/v1\/admin\/reports\/([^/]+)\/assignments$/);
-  if (matchAdminAssign && method === 'POST') {
-    const reportId = matchAdminAssign[1];
-    const report = db.reports.find(r => r.id === reportId || r.ticket_number === reportId);
-    if (!report) {
-      return sendJSON(res, 404, { error: { code: 'REPORT_NOT_FOUND', message: 'Laporan tidak ditemukan' } });
-    }
-    const { officer_id, notes } = await parseBody(req);
-    const officer = db.users.find(u => u.id === officer_id);
-    if (!officer) {
-      return sendJSON(res, 404, { error: { code: 'OFFICER_NOT_FOUND', message: 'Petugas tidak ditemukan' } });
-    }
-    const oldStatus = report.status;
-    report.assigned_officer_id = officer.id;
-    report.assigned_officer_name = officer.full_name;
-    report.status = 'Ditugaskan';
-    if (notes) report.admin_note = notes;
-    report.updated_at = new Date().toISOString();
-
-    db.status_histories.unshift({
-      id: 'sh-' + Date.now(),
-      report_id: report.id,
-      changed_by: 'Administrator DLH',
-      old_status: oldStatus,
-      new_status: 'Ditugaskan',
-      note: `Ditugaskan kepada ${officer.full_name}. Catatan: ${notes || '-'}`,
-      created_at: new Date().toISOString()
-    });
-
-    saveData(db);
-    return sendJSON(res, 200, { data: report });
-  }
-
-  // 12. Admin Dashboard Summary (/api/v1/admin/dashboard/summary)
-  if (pathname === '/api/v1/admin/dashboard/summary' && method === 'GET') {
-    const total = db.reports.length;
-    const menunggu = db.reports.filter(r => r.status === 'Menunggu Verifikasi').length;
-    const proses = db.reports.filter(r => ['Terverifikasi', 'Ditugaskan', 'Dalam Penanganan'].includes(r.status)).length;
-    const selesai = db.reports.filter(r => ['Selesai', 'Ditutup'].includes(r.status)).length;
-    const ditolak = db.reports.filter(r => ['Ditolak', 'Perlu Perbaikan'].includes(r.status)).length;
-
-    return sendJSON(res, 200, {
-      data: {
-        kpi: {
-          total_reports: total,
-          waiting_verification: menunggu,
-          in_progress: proses,
-          completed: selesai,
-          rejected: ditolak,
-          resolution_rate_percent: total > 0 ? Math.round((selesai / total) * 100) : 0,
-          avg_response_hours: 1.4,
-          active_fleets: 18
-        },
-        kecamatan_stats: [
-          { name: 'Tj. Karang Pusat', count: 28 },
-          { name: 'Kedaton', count: 22 },
-          { name: 'Teluk Betung Sel.', count: 19 },
-          { name: 'Sukarame', count: 16 },
-          { name: 'Way Halim', count: 14 }
-        ],
-        monthly_trend: [
-          { month: 'Jun', count: 42 },
-          { month: 'Jul', count: 58 },
-          { month: 'Agt', count: 74 },
-          { month: 'Sep', count: 86 },
-          { month: 'Okt', count: 105 },
-          { month: 'Nov', count: 128 }
-        ]
-      }
-    });
-  }
-
-  // 13. Admin Users (/api/v1/admin/users)
-  if (pathname === '/api/v1/admin/users' && method === 'GET') {
-    const usersWithoutPassword = db.users.map(({ password_hash, ...u }) => u);
-    return sendJSON(res, 200, { data: usersWithoutPassword });
-  }
-
-  // 14. Notifications List & Read
   if (pathname === '/api/v1/notifications' && method === 'GET') {
     return sendJSON(res, 200, { data: db.notifications });
   }
-  const matchNotifRead = pathname.match(/^\/api\/v1\/notifications\/([^/]+)\/read$/);
-  if (matchNotifRead && method === 'PATCH') {
-    const notif = db.notifications.find(n => n.id === matchNotifRead[1]);
-    if (notif) notif.read_at = new Date().toISOString();
-    saveData(db);
-    return sendJSON(res, 200, { data: notif });
-  }
 
-  // 15. Base64 Upload Endpoint for Photos
-  if (pathname === '/api/v1/upload' && method === 'POST') {
-    const { imageBase64, filename } = await parseBody(req);
-    if (!imageBase64) {
-      return sendJSON(res, 400, { error: { code: 'EMPTY_FILE', message: 'Data gambar kosong.' } });
-    }
-    const ext = filename && filename.endsWith('.png') ? '.png' : '.jpg';
-    const fname = 'upload_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex') + ext;
-    const fpath = path.join(UPLOAD_DIR, fname);
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    fs.writeFileSync(fpath, Buffer.from(base64Data, 'base64'));
-    return sendJSON(res, 200, {
-      data: {
-        file_path: '/uploads/' + fname,
-        url: '/uploads/' + fname
-      }
-    });
-  }
-
-  // ==========================================
-  // STATIC FILE SERVING
-  // ==========================================
+  // Static File Serving
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-  if (safePath === '/' || safePath === '\\') {
-    safePath = 'index.html';
-  }
+  if (safePath === '/' || safePath === '\\') safePath = 'index.html';
 
   const filePath = path.join(__dirname, safePath);
-
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('404 Not Found: ' + pathname);
     }
-
     const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': 'no-cache'
-    });
-
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
+    res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+    fs.createReadStream(filePath).pipe(res);
   });
-});
+};
 
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🌿 Lampung Smart Waste Server is running on port ${PORT}`);
-  console.log(`📡 URL Master:    http://localhost:${PORT}`);
-  console.log(`👥 Portal Warga:  http://localhost:${PORT}/customer.html`);
-  console.log(`🔐 Admin Control: http://localhost:${PORT} (Switch to Admin)`);
-  console.log(`=======================================================`);
-});
+const server = http.createServer(requestHandler);
 
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🌿 Lampung Smart Waste Server is running on port ${PORT}`);
+    console.log(`📡 URL Master:    http://localhost:${PORT}`);
+    console.log(`👥 Portal Warga:  http://localhost:${PORT}/customer.html`);
+    console.log(`=======================================================`);
+  });
+}
+
+module.exports = server;

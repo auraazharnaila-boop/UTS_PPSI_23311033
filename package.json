@@ -2,7 +2,6 @@
   "name": "lampung-smart-waste",
   "version": "1.0.0",
   "description": "Sistem Pelaporan dan Penanganan Sampah Digital Kota Bandar Lampung Berbasis Smart City",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
@@ -21,4 +20,3 @@
     "cors": "^2.8.5"
   }
 }
-
