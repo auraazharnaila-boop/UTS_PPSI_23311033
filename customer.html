@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#006B2C">
   <link rel="icon" type="image/jpeg" href="assets/logo-bandarlampung.jpg">
 
-  <!-- Fonts & Icons -->
+  <!-- Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -24,8 +24,402 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    :root {
+      --primary: #006B2C;
+      --primary-container: #00873A;
+      --secondary: #0051D5;
+      --tertiary: #1C6938;
+      --background: #FAF8FF;
+      --surface-container-lowest: #FFFFFF;
+      --surface-container-low: #F2F3FF;
+      --surface-container: #EAEDFF;
+      --surface-container-high: #E2E7FF;
+      --on-surface: #131B2E;
+      --on-surface-variant: #3E4A3D;
+      --outline: #6E7B6C;
+      --error: #BA1A1A;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 3px rgba(19, 27, 46, 0.05);
+      --shadow-md: 0 4px 12px rgba(19, 27, 46, 0.08);
+      --sidebar-width: 280px;
+      --header-height: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      color: var(--on-surface);
+      line-height: 1.5;
+    }
+
+    .material-symbols-outlined {
+      vertical-align: middle;
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #fff;
+      border-right: 1px solid var(--surface-container);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .brand-section {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--surface-container-low);
+    }
+
+    .logos-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .logo-img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--outline);
+      text-transform: uppercase;
+    }
+
+    .nav-menu {
+      flex: 1;
+      padding: 12px 14px;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--outline);
+      padding: 12px 12px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      margin-bottom: 4px;
+      border-radius: var(--radius-sm);
+      color: var(--on-surface-variant);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .sidebar-helpdesk {
+      padding: 16px;
+      margin: 12px 16px;
+      background: var(--surface-container-low);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+    }
+
+    .main-wrapper {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-header {
+      height: var(--header-height);
+      background: #fff;
+      border-bottom: 1px solid var(--surface-container);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .clock-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--surface-container-low);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .hotline-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--error);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+    }
+
+    .page-container {
+      padding: 28px;
+      flex: 1;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #006B2C 0%, #004D1F 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: #fff;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border: 1px solid var(--surface-container);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .kpi-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-icon-wrap.green {
+      background: #E8F5E9;
+      color: var(--primary);
+    }
+
+    .kpi-icon-wrap.blue {
+      background: #E3F2FD;
+      color: var(--secondary);
+    }
+
+    .kpi-icon-wrap.red {
+      background: #FFEBEE;
+      color: var(--error);
+    }
+
+    .kpi-info .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--outline);
+      text-transform: uppercase;
+    }
+
+    .kpi-info .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--on-surface);
+    }
+
+    .content-grid-2col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .panel-card {
+      background: #fff;
+      border: 1px solid var(--surface-container);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-pill.menunggu {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .status-pill.terverifikasi {
+      background: #E0E7FF;
+      color: #3730A3;
+    }
+
+    .status-pill.ditugaskan {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+
+    .status-pill.penanganan {
+      background: #E0F2FE;
+      color: #075985;
+    }
+
+    .status-pill.selesai {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .status-pill.ditolak {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .custom-table th {
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--outline);
+      background: var(--surface-container-low);
+      border-bottom: 1px solid var(--surface-container);
+    }
+
+    .custom-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--surface-container-low);
+    }
+
+    #map-warga {
+      height: 340px;
+      width: 100%;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--surface-container);
+    }
+
+    .app-footer {
+      margin-top: auto;
+      background: #fff;
+      border-top: 1px solid var(--surface-container);
+      padding: 20px 28px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--on-surface-variant);
+    }
+
+    @media (max-width: 1024px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .content-grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .main-wrapper {
+        margin-left: 0;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -35,10 +429,12 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand-section">
         <div class="logos-container">
-          <img src="assets/logo-bandarlampung.jpg" alt="Logo Pemkot Bandar Lampung" class="logo-img"
-            title="Pemerintah Kota Bandar Lampung">
-          <img src="assets/logo-teknokrat.png" alt="Logo Universitas Teknokrat Indonesia" class="logo-img"
-            title="Universitas Teknokrat Indonesia">
+          <img src="assets/logo-bandarlampung.jpg"
+            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/a/a7/Lambang_Kota_Bandar_Lampung.jpg';"
+            alt="Logo Pemkot Bandar Lampung" class="logo-img" title="Pemerintah Kota Bandar Lampung">
+          <img src="assets/logo-teknokrat.png"
+            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/a/a0/UNIVERSITASTEKNOKRAT.png';"
+            alt="Logo Universitas Teknokrat Indonesia" class="logo-img" title="Universitas Teknokrat Indonesia">
         </div>
         <div class="brand-title">Lampung Smart Waste</div>
         <div class="brand-subtitle">Portal Pelaporan Masyarakat</div>
@@ -54,10 +450,6 @@
           <span class="material-symbols-outlined">add_circle</span>
           <span>Buat Laporan Baru</span>
         </a>
-        <a href="#riwayat" class="nav-item">
-          <span class="material-symbols-outlined">receipt_long</span>
-          <span>Laporan Saya</span>
-        </a>
         <a href="index.html" class="nav-item">
           <span class="material-symbols-outlined">admin_panel_settings</span>
           <span>Buka Master Hub</span>
@@ -65,10 +457,7 @@
       </nav>
 
       <div class="sidebar-helpdesk">
-        <div class="helpdesk-header">
-          <span class="material-symbols-outlined" style="font-size: 16px;">support_agent</span>
-          <span>Layanan DLH 24/7</span>
-        </div>
+        <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;">Layanan DLH 24/7</div>
         <p style="color: var(--on-surface-variant); margin-bottom: 4px;">dlh@bandarlampungkota.go.id</p>
         <div style="font-size: 11px; color: var(--outline);">Call Center Siaga: 112</div>
       </div>
@@ -76,63 +465,40 @@
 
     <!-- Main Wrapper -->
     <div class="main-wrapper">
-      <!-- Header -->
       <header class="top-header">
-        <div class="header-left">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-          <div class="search-bar">
-            <span class="material-symbols-outlined" style="color: var(--outline); font-size: 18px;">search</span>
-            <input type="text" placeholder="Cari laporan saya..." oninput="handleGlobalSearch(this.value)">
-          </div>
+        <div>
+          <strong style="color: var(--primary);">Portal Warga</strong> • Kota Bandar Lampung
         </div>
-
-        <div class="header-right">
+        <div style="display: flex; align-items: center; gap: 16px;">
           <div class="clock-pill">
             <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">schedule</span>
             <span id="live-clock">12:00:00 WIB</span>
           </div>
-
           <a href="tel:112" class="hotline-btn">
             <span class="material-symbols-outlined" style="font-size: 16px;">call</span>
             <span>DLH 112</span>
           </a>
-
-          <div class="user-profile-menu">
-            <div class="avatar-circle">A</div>
-            <div>
-              <div style="font-size: 13px; font-weight: 700;">Aura Azhar Naila</div>
-              <div style="font-size: 11px; color: var(--outline);">Warga Bandar Lampung</div>
-            </div>
-          </div>
         </div>
       </header>
 
-      <!-- Content -->
       <main class="page-container">
-        <!-- Hero Banner -->
         <div class="hero-banner">
-          <div class="hero-text">
+          <div>
             <h1>Selamat Datang, Aura Azhar Naila!</h1>
             <p>Laporkan tumpukan sampah liar di sekitar Anda. Petugas kebersihan DLH Bandar Lampung siap merespons
               laporan Anda.</p>
           </div>
-          <div class="hero-actions">
-            <button class="btn-primary" onclick="openReportModal()">
-              <span class="material-symbols-outlined">add_photo_alternate</span>
-              <span>Lapor Sampah Sekarang</span>
-            </button>
-          </div>
+          <button class="btn-primary" onclick="openReportModal()">
+            <span class="material-symbols-outlined">add_photo_alternate</span>
+            <span>Lapor Sampah</span>
+          </button>
         </div>
 
-        <!-- KPI Grid -->
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-info">
               <div class="kpi-label">Total Laporan Saya</div>
               <div class="kpi-value" id="kpi-warga-total">5</div>
-              <div class="kpi-desc">Akumulasi laporan</div>
             </div>
             <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">assignment</span></div>
           </div>
@@ -140,7 +506,6 @@
             <div class="kpi-info">
               <div class="kpi-label">Sedang Diproses</div>
               <div class="kpi-value" id="kpi-warga-proses">2</div>
-              <div class="kpi-desc">Ditangani petugas</div>
             </div>
             <div class="kpi-icon-wrap blue"><span class="material-symbols-outlined">local_shipping</span></div>
           </div>
@@ -148,7 +513,6 @@
             <div class="kpi-info">
               <div class="kpi-label">Laporan Selesai</div>
               <div class="kpi-value" id="kpi-warga-selesai">2</div>
-              <div class="kpi-desc">Area telah bersih</div>
             </div>
             <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">check_circle</span></div>
           </div>
@@ -156,31 +520,29 @@
             <div class="kpi-info">
               <div class="kpi-label">Ditolak / Revisi</div>
               <div class="kpi-value" id="kpi-warga-ditolak">1</div>
-              <div class="kpi-desc">Perlu verifikasi</div>
             </div>
             <div class="kpi-icon-wrap red"><span class="material-symbols-outlined">cancel</span></div>
           </div>
         </div>
 
-        <!-- 2 Kolom -->
         <div class="content-grid-2col">
           <div>
-            <div class="panel-card" id="riwayat">
+            <div class="panel-card">
               <div class="panel-header">
                 <div class="panel-title">
                   <span class="material-symbols-outlined" style="color: var(--primary);">history</span>
                   <span>Riwayat Laporan Saya</span>
                 </div>
               </div>
-              <div class="custom-table-wrap">
+              <div style="overflow-x: auto;">
                 <table class="custom-table">
                   <thead>
                     <tr>
                       <th>Tiket</th>
                       <th>Kategori</th>
-                      <th>Lokasi Kejadian</th>
+                      <th>Lokasi</th>
                       <th>Status</th>
-                      <th>Detail</th>
+                      <th>Aksi</th>
                     </tr>
                   </thead>
                   <tbody id="warga-reports-tbody"></tbody>
@@ -192,7 +554,7 @@
               <div class="panel-header">
                 <div class="panel-title">
                   <span class="material-symbols-outlined" style="color: var(--secondary);">map</span>
-                  <span>Peta Sebaran Laporan Sampah Kota Bandar Lampung</span>
+                  <span>Peta Titik Sampah Bandar Lampung</span>
                 </div>
               </div>
               <div id="map-warga"></div>
@@ -209,7 +571,7 @@
                 id="warga-points-val">340</div>
               <div style="font-size: 12px; color: var(--outline); margin-bottom: 12px;">Level: Warga Peduli Lingkungan
               </div>
-              <button class="btn-primary" style="width: 100%; justify-content: center; font-size: 12px;"
+              <button class="btn-primary" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px;"
                 onclick="alert('Katalog Reward: \n1. Pengurangan Retribusi Sampah 20%\n2. Bibit Pohon Peneduh DLH\n3. Tumbler Eco Smart City')">
                 Katalog Reward
               </button>
@@ -233,132 +595,12 @@
         </div>
       </main>
 
-      <!-- Footer -->
       <footer class="app-footer">
         <div>Copyright©2026 by Aura Azhar Naila dan Dr. Erliyan Redy Susanto, M.Kom</div>
         <div style="font-size: 11px; color: var(--outline); margin-top: 4px;">
           Pemerintah Kota Bandar Lampung • Dinas Lingkungan Hidup • Universitas Teknokrat Indonesia
         </div>
       </footer>
-    </div>
-  </div>
-
-  <!-- Modal Buat Laporan Stepper (Reused in customer.html) -->
-  <div class="modal-overlay" id="modal-report">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-        <h2 style="font-size: 18px; font-weight: 800; color: var(--primary);">Buat Laporan Sampah Baru</h2>
-        <button onclick="closeReportModal()"
-          style="background: none; border: none; cursor: pointer; color: var(--outline);">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      <div class="stepper-header">
-        <div class="step-item active" id="step-btn-1" onclick="goToStep(1)">
-          <div class="step-number">1</div>
-          <div class="step-title">Kategori</div>
-        </div>
-        <div class="step-item" id="step-btn-2" onclick="goToStep(2)">
-          <div class="step-number">2</div>
-          <div class="step-title">Deskripsi</div>
-        </div>
-        <div class="step-item" id="step-btn-3" onclick="goToStep(3)">
-          <div class="step-number">3</div>
-          <div class="step-title">Foto Bukti</div>
-        </div>
-        <div class="step-item" id="step-btn-4" onclick="goToStep(4)">
-          <div class="step-number">4</div>
-          <div class="step-title">Lokasi</div>
-        </div>
-      </div>
-
-      <form id="report-form" onsubmit="submitReportForm(event)">
-        <div class="step-content" id="step-content-1">
-          <label class="form-label">Pilih Kategori Sampah yang Dilaporkan:</label>
-          <div class="category-card-grid" id="category-radio-container"></div>
-          <input type="hidden" id="form-selected-category" value="cat-1">
-        </div>
-
-        <div class="step-content" id="step-content-2" style="display: none;">
-          <div class="form-group">
-            <label class="form-label" for="report-title">Judul Singkat Kejadian</label>
-            <input type="text" id="report-title" class="form-input"
-              placeholder="Contoh: Tumpukan kresek di depan ruko kosong" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="report-volume">Estimasi Volume Sampah</label>
-            <select id="report-volume" class="form-select">
-              <option value="± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)">± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)</option>
-              <option value="± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)">± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)</option>
-              <option value="± 4.0 - 6.0 m³ (1 Truk Dump Penuh)">± 4.0 - 6.0 m³ (1 Truk Dump Penuh)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="report-desc">Deskripsi Rinci Permasalahan</label>
-            <textarea id="report-desc" class="form-textarea" rows="3" placeholder="Jelaskan kondisi sampah..."
-              required></textarea>
-          </div>
-        </div>
-
-        <div class="step-content" id="step-content-3" style="display: none;">
-          <label class="form-label">Unggah Foto Bukti Sampah Lapangan:</label>
-          <div class="upload-dropzone" onclick="document.getElementById('report-file-input').click()">
-            <span class="material-symbols-outlined" style="font-size: 36px; color: var(--primary);">cloud_upload</span>
-            <div style="font-weight: 700; margin-top: 6px;">Klik untuk Memilih Foto</div>
-            <input type="file" id="report-file-input" accept="image/*" style="display: none;"
-              onchange="handlePhotoUpload(this)">
-          </div>
-          <img id="report-photo-preview" class="upload-preview" style="display: none;" alt="Pratinjau Foto">
-          <input type="hidden" id="report-photo-base64">
-        </div>
-
-        <div class="step-content" id="step-content-4" style="display: none;">
-          <div class="form-group">
-            <label class="form-label" for="report-address">Alamat Lengkap Kejadian</label>
-            <input type="text" id="report-address" class="form-input" placeholder="Jl. Raden Intan, Enggal..." required>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-            <div>
-              <label class="form-label">Latitude</label>
-              <input type="number" step="any" id="report-lat" class="form-input" value="-5.4292">
-            </div>
-            <div>
-              <label class="form-label">Longitude</label>
-              <input type="number" step="any" id="report-lng" class="form-input" value="105.2625">
-            </div>
-          </div>
-        </div>
-
-        <div
-          style="display: flex; justify-content: space-between; margin-top: 24px; border-top: 1px solid var(--surface-container-low); padding-top: 16px;">
-          <button type="button" class="btn-secondary" id="btn-prev-step" style="color: var(--on-surface);"
-            onclick="prevStep()" disabled>
-            Kembali
-          </button>
-          <button type="button" class="btn-primary" id="btn-next-step" onclick="nextStep()">
-            <span>Lanjutkan</span>
-            <span class="material-symbols-outlined">arrow_forward</span>
-          </button>
-          <button type="submit" class="btn-primary" id="btn-submit-step" style="display: none;">
-            <span class="material-symbols-outlined">send</span>
-            <span>Kirim Laporan Resmi</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Detail -->
-  <div class="modal-overlay" id="modal-detail">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h2 style="font-size: 18px; font-weight: 800;" id="detail-ticket-title">Detail Laporan</h2>
-        <button onclick="closeDetailModal()" style="background: none; border: none; cursor: pointer;">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      <div id="detail-body-content"></div>
     </div>
   </div>
 
