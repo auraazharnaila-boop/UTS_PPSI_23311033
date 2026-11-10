@@ -1,0 +1,61 @@
+{
+  "name": "Lampung Smart Waste - DLH Kota Bandar Lampung",
+  "short_name": "SmartWaste",
+  "description": "Sistem Pelaporan dan Pengelolaan Penanganan Sampah Terpadu Kota Bandar Lampung Berbasis Smart City",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FAF8FF",
+  "theme_color": "#006B2C",
+  "lang": "id-ID",
+  "dir": "ltr",
+  "categories": [
+    "utilities",
+    "government",
+    "environment",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "assets/logo-bandarlampung.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo-teknokrat.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buat Laporan Baru",
+      "short_name": "Lapor",
+      "description": "Laporkan tumpukan sampah liar di Bandar Lampung",
+      "url": "./index.html#buat-laporan",
+      "icons": [
+        {
+          "src": "assets/logo-bandarlampung.jpg",
+          "sizes": "96x96",
+          "type": "image/jpeg"
+        }
+      ]
+    },
+    {
+      "name": "Portal Warga",
+      "short_name": "Warga",
+      "description": "Buka dashboard pelaporan masyarakat",
+      "url": "./customer.html",
+      "icons": [
+        {
+          "src": "assets/logo-bandarlampung.jpg",
+          "sizes": "96x96",
+          "type": "image/jpeg"
+        }
+      ]
+    }
+  ]
+}

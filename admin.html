@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pusat Kendali Admin - Lampung Smart Waste</title>
+  
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#006B2C">
+  <link rel="icon" type="image/jpeg" href="assets/logo-bandarlampung.jpg">
+
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Leaflet GIS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="logos-container">
+          <img src="assets/logo-bandarlampung.jpg" alt="Logo Pemkot Bandar Lampung" class="logo-img" title="Pemerintah Kota Bandar Lampung">
+          <img src="assets/logo-teknokrat.png" alt="Logo Universitas Teknokrat Indonesia" class="logo-img" title="Universitas Teknokrat Indonesia">
+        </div>
+        <div class="brand-title">Lampung Smart Waste</div>
+        <div class="brand-subtitle">Pusat Kendali DLH Kota</div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-group-title">Menu Administrator</div>
+        <a href="admin.html" class="nav-item active">
+          <span class="material-symbols-outlined">monitoring</span>
+          <span>Pemantauan Eksekutif</span>
+        </a>
+        <a href="#verifikasi-antrean" class="nav-item">
+          <span class="material-symbols-outlined">rule</span>
+          <span>Verifikasi Laporan</span>
+        </a>
+        <a href="#peta-insiden" class="nav-item">
+          <span class="material-symbols-outlined">radar</span>
+          <span>Live GIS Spasial</span>
+        </a>
+        <a href="#analitik-grafik" class="nav-item">
+          <span class="material-symbols-outlined">analytics</span>
+          <span>Analitik Eksekutif</span>
+        </a>
+        <a href="index.html" class="nav-item">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Buka Master Hub</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-helpdesk">
+        <div class="helpdesk-header">
+          <span class="material-symbols-outlined" style="font-size: 16px;">verified_user</span>
+          <span>Otoritas DLH</span>
+        </div>
+        <p style="color: var(--on-surface-variant); margin-bottom: 4px;">Pemerintah Kota Bandar Lampung</p>
+        <div style="font-size: 11px; color: var(--outline);">Server Status: Online 99.9%</div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="search-bar">
+            <span class="material-symbols-outlined" style="color: var(--outline); font-size: 18px;">search</span>
+            <input type="text" placeholder="Cari tiket, kecamatan, pelapor..." oninput="handleGlobalSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="clock-pill">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">schedule</span>
+            <span id="live-clock">12:00:00 WIB</span>
+          </div>
+
+          <a href="tel:112" class="hotline-btn">
+            <span class="material-symbols-outlined" style="font-size: 16px;">call</span>
+            <span>DLH 112</span>
+          </a>
+
+          <div class="user-profile-menu">
+            <div class="avatar-circle" style="background: var(--tertiary);">E</div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Dr. Erliyan Redy Susanto, M.Kom</div>
+              <div style="font-size: 11px; color: var(--outline);">Kepala Pusat Kendali DLH</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="page-container">
+        <!-- Top Command Bar -->
+        <div style="background: linear-gradient(135deg, #131B2E, #23314F); color: #fff; border-radius: var(--radius-lg); padding: 20px 28px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.3px;">Pusat Kendali Smart City DLH Bandar Lampung</div>
+            <div style="font-size: 13px; color: #E2E7FF;">Monitoring Real-time Penanganan Sampah Wilayah Perkotaan</div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span class="status-pill penanganan" style="background: #316BF3; color: #fff;">18 Armada Beroperasi</span>
+            <button class="btn-primary" style="font-size: 12px; padding: 8px 16px;" onclick="refreshAdminData()">
+              <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+              <span>Segarkan Data</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Total Aduan Masuk</div>
+              <div class="kpi-value" id="admin-kpi-total">128</div>
+              <div class="kpi-desc">Akumulasi November 2026</div>
+            </div>
+            <div class="kpi-icon-wrap blue"><span class="material-symbols-outlined">analytics</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Tingkat Penyelesaian</div>
+              <div class="kpi-value" id="admin-kpi-rate">88%</div>
+              <div class="kpi-desc">+4.2% dari target DLH</div>
+            </div>
+            <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">verified</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Respons Rata-rata</div>
+              <div class="kpi-value" id="admin-kpi-response">1.4 Jam</div>
+              <div class="kpi-desc">Waktu tanggap verifikasi</div>
+            </div>
+            <div class="kpi-icon-wrap amber"><span class="material-symbols-outlined">speed</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Menunggu Verifikasi</div>
+              <div class="kpi-value" id="admin-kpi-waiting">4</div>
+              <div class="kpi-desc">Perlu verifikasi segera</div>
+            </div>
+            <div class="kpi-icon-wrap red"><span class="material-symbols-outlined">pending_actions</span></div>
+          </div>
+        </div>
+
+        <!-- Peta GIS Live -->
+        <div class="panel-card" id="peta-insiden">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="material-symbols-outlined" style="color: var(--secondary);">radar</span>
+              <span>Pemantauan Geografis & Sebaran Titik Sampah Kota Bandar Lampung</span>
+            </div>
+            <span class="status-pill penanganan">Live Telemetry GIS</span>
+          </div>
+          <div id="map-admin" style="height: 380px;"></div>
+        </div>
+
+        <!-- Matriks 4 Grafik Eksekutif -->
+        <div class="admin-charts-grid" id="analitik-grafik">
+          <div class="panel-card">
+            <div class="panel-title" style="margin-bottom: 14px;">
+              <span class="material-symbols-outlined" style="color: var(--primary);">show_chart</span>
+              <span>Tren Laporan Sampah (6 Bulan Terakhir)</span>
+            </div>
+            <canvas id="chart-tren-bulanan" height="200"></canvas>
+          </div>
+          <div class="panel-card">
+            <div class="panel-title" style="margin-bottom: 14px;">
+              <span class="material-symbols-outlined" style="color: var(--secondary);">bar_chart</span>
+              <span>5 Kecamatan Teratas Titik Sampah</span>
+            </div>
+            <canvas id="chart-top-kecamatan" height="200"></canvas>
+          </div>
+          <div class="panel-card">
+            <div class="panel-title" style="margin-bottom: 14px;">
+              <span class="material-symbols-outlined" style="color: var(--tertiary);">pie_chart</span>
+              <span>Distribusi Status Laporan</span>
+            </div>
+            <canvas id="chart-status-doughnut" height="200"></canvas>
+          </div>
+          <div class="panel-card">
+            <div class="panel-title" style="margin-bottom: 14px;">
+              <span class="material-symbols-outlined" style="color: #D97706;">category</span>
+              <span>Komposisi Kategori Jenis Sampah</span>
+            </div>
+            <canvas id="chart-kategori-bar" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Antrean Verifikasi & Penugasan -->
+        <div class="panel-card" id="verifikasi-antrean">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="material-symbols-outlined" style="color: var(--primary);">rule</span>
+              <span>Antrean Verifikasi & Penugasan Laporan</span>
+            </div>
+            <span style="font-size: 12px; color: var(--outline);">Klik tindakan untuk memproses</span>
+          </div>
+
+          <div class="custom-table-wrap">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Tiket & Tanggal</th>
+                  <th>Pelapor</th>
+                  <th>Kategori & Alamat</th>
+                  <th>Status</th>
+                  <th>Petugas</th>
+                  <th>Aksi Admin</th>
+                </tr>
+              </thead>
+              <tbody id="admin-reports-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div>Copyright©2026 by Aura Azhar Naila dan Dr. Erliyan Redy Susanto, M.Kom</div>
+        <div style="font-size: 11px; color: var(--outline); margin-top: 4px;">
+          Pemerintah Kota Bandar Lampung • Dinas Lingkungan Hidup • Universitas Teknokrat Indonesia
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal Detail -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800;" id="detail-ticket-title">Detail Laporan</h2>
+        <button onclick="closeDetailModal()" style="background: none; border: none; cursor: pointer;">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="detail-body-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Set active role as Admin on this page
+    document.addEventListener('DOMContentLoaded', () => {
+      switchRole('admin');
+    });
+  </script>
+</body>
+</html>
+

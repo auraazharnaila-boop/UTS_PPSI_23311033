@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Warga - Lampung Smart Waste</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#006B2C">
+  <link rel="icon" type="image/jpeg" href="assets/logo-bandarlampung.jpg">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Leaflet GIS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="logos-container">
+          <img src="assets/logo-bandarlampung.jpg" alt="Logo Pemkot Bandar Lampung" class="logo-img"
+            title="Pemerintah Kota Bandar Lampung">
+          <img src="assets/logo-teknokrat.png" alt="Logo Universitas Teknokrat Indonesia" class="logo-img"
+            title="Universitas Teknokrat Indonesia">
+        </div>
+        <div class="brand-title">Lampung Smart Waste</div>
+        <div class="brand-subtitle">Portal Pelaporan Masyarakat</div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-group-title">Menu Utama Warga</div>
+        <a href="customer.html" class="nav-item active">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span>Dashboard Warga</span>
+        </a>
+        <a href="#buat-laporan" class="nav-item" onclick="openReportModal()">
+          <span class="material-symbols-outlined">add_circle</span>
+          <span>Buat Laporan Baru</span>
+        </a>
+        <a href="#riwayat" class="nav-item">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <span>Laporan Saya</span>
+        </a>
+        <a href="index.html" class="nav-item">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Buka Master Hub</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-helpdesk">
+        <div class="helpdesk-header">
+          <span class="material-symbols-outlined" style="font-size: 16px;">support_agent</span>
+          <span>Layanan DLH 24/7</span>
+        </div>
+        <p style="color: var(--on-surface-variant); margin-bottom: 4px;">dlh@bandarlampungkota.go.id</p>
+        <div style="font-size: 11px; color: var(--outline);">Call Center Siaga: 112</div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="search-bar">
+            <span class="material-symbols-outlined" style="color: var(--outline); font-size: 18px;">search</span>
+            <input type="text" placeholder="Cari laporan saya..." oninput="handleGlobalSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="clock-pill">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">schedule</span>
+            <span id="live-clock">12:00:00 WIB</span>
+          </div>
+
+          <a href="tel:112" class="hotline-btn">
+            <span class="material-symbols-outlined" style="font-size: 16px;">call</span>
+            <span>DLH 112</span>
+          </a>
+
+          <div class="user-profile-menu">
+            <div class="avatar-circle">A</div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Aura Azhar Naila</div>
+              <div style="font-size: 11px; color: var(--outline);">Warga Bandar Lampung</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="page-container">
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <div class="hero-text">
+            <h1>Selamat Datang, Aura Azhar Naila!</h1>
+            <p>Laporkan tumpukan sampah liar di sekitar Anda. Petugas kebersihan DLH Bandar Lampung siap merespons
+              laporan Anda.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="openReportModal()">
+              <span class="material-symbols-outlined">add_photo_alternate</span>
+              <span>Lapor Sampah Sekarang</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Total Laporan Saya</div>
+              <div class="kpi-value" id="kpi-warga-total">5</div>
+              <div class="kpi-desc">Akumulasi laporan</div>
+            </div>
+            <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">assignment</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Sedang Diproses</div>
+              <div class="kpi-value" id="kpi-warga-proses">2</div>
+              <div class="kpi-desc">Ditangani petugas</div>
+            </div>
+            <div class="kpi-icon-wrap blue"><span class="material-symbols-outlined">local_shipping</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Laporan Selesai</div>
+              <div class="kpi-value" id="kpi-warga-selesai">2</div>
+              <div class="kpi-desc">Area telah bersih</div>
+            </div>
+            <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">check_circle</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Ditolak / Revisi</div>
+              <div class="kpi-value" id="kpi-warga-ditolak">1</div>
+              <div class="kpi-desc">Perlu verifikasi</div>
+            </div>
+            <div class="kpi-icon-wrap red"><span class="material-symbols-outlined">cancel</span></div>
+          </div>
+        </div>
+
+        <!-- 2 Kolom -->
+        <div class="content-grid-2col">
+          <div>
+            <div class="panel-card" id="riwayat">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span class="material-symbols-outlined" style="color: var(--primary);">history</span>
+                  <span>Riwayat Laporan Saya</span>
+                </div>
+              </div>
+              <div class="custom-table-wrap">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Tiket</th>
+                      <th>Kategori</th>
+                      <th>Lokasi Kejadian</th>
+                      <th>Status</th>
+                      <th>Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody id="warga-reports-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span class="material-symbols-outlined" style="color: var(--secondary);">map</span>
+                  <span>Peta Sebaran Laporan Sampah Kota Bandar Lampung</span>
+                </div>
+              </div>
+              <div id="map-warga"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-card" style="background: linear-gradient(135deg, #FAF8FF, #EAEDFF);">
+              <div class="panel-title" style="margin-bottom: 12px;">
+                <span class="material-symbols-outlined" style="color: #D97706;">workspace_premium</span>
+                <span>Poin Warga Bersih</span>
+              </div>
+              <div style="font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 4px;"
+                id="warga-points-val">340</div>
+              <div style="font-size: 12px; color: var(--outline); margin-bottom: 12px;">Level: Warga Peduli Lingkungan
+              </div>
+              <button class="btn-primary" style="width: 100%; justify-content: center; font-size: 12px;"
+                onclick="alert('Katalog Reward: \n1. Pengurangan Retribusi Sampah 20%\n2. Bibit Pohon Peneduh DLH\n3. Tumbler Eco Smart City')">
+                Katalog Reward
+              </button>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 12px;">
+                <span class="material-symbols-outlined" style="color: var(--secondary);">schedule</span>
+                <span>Jadwal Pengangkutan Truk</span>
+              </div>
+              <div style="font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="padding: 8px; background: var(--surface-container-low); border-radius: 6px;">
+                  <strong>Pagi (06:00 - 09:00 WIB)</strong>: Enggal & Tanjung Karang
+                </div>
+                <div style="padding: 8px; background: var(--surface-container-low); border-radius: 6px;">
+                  <strong>Sore (16:00 - 18:30 WIB)</strong>: Kedaton, Rajabasa & Sukarame
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div>Copyright©2026 by Aura Azhar Naila dan Dr. Erliyan Redy Susanto, M.Kom</div>
+        <div style="font-size: 11px; color: var(--outline); margin-top: 4px;">
+          Pemerintah Kota Bandar Lampung • Dinas Lingkungan Hidup • Universitas Teknokrat Indonesia
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal Buat Laporan Stepper (Reused in customer.html) -->
+  <div class="modal-overlay" id="modal-report">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--primary);">Buat Laporan Sampah Baru</h2>
+        <button onclick="closeReportModal()"
+          style="background: none; border: none; cursor: pointer; color: var(--outline);">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="stepper-header">
+        <div class="step-item active" id="step-btn-1" onclick="goToStep(1)">
+          <div class="step-number">1</div>
+          <div class="step-title">Kategori</div>
+        </div>
+        <div class="step-item" id="step-btn-2" onclick="goToStep(2)">
+          <div class="step-number">2</div>
+          <div class="step-title">Deskripsi</div>
+        </div>
+        <div class="step-item" id="step-btn-3" onclick="goToStep(3)">
+          <div class="step-number">3</div>
+          <div class="step-title">Foto Bukti</div>
+        </div>
+        <div class="step-item" id="step-btn-4" onclick="goToStep(4)">
+          <div class="step-number">4</div>
+          <div class="step-title">Lokasi</div>
+        </div>
+      </div>
+
+      <form id="report-form" onsubmit="submitReportForm(event)">
+        <div class="step-content" id="step-content-1">
+          <label class="form-label">Pilih Kategori Sampah yang Dilaporkan:</label>
+          <div class="category-card-grid" id="category-radio-container"></div>
+          <input type="hidden" id="form-selected-category" value="cat-1">
+        </div>
+
+        <div class="step-content" id="step-content-2" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="report-title">Judul Singkat Kejadian</label>
+            <input type="text" id="report-title" class="form-input"
+              placeholder="Contoh: Tumpukan kresek di depan ruko kosong" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="report-volume">Estimasi Volume Sampah</label>
+            <select id="report-volume" class="form-select">
+              <option value="± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)">± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)</option>
+              <option value="± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)">± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)</option>
+              <option value="± 4.0 - 6.0 m³ (1 Truk Dump Penuh)">± 4.0 - 6.0 m³ (1 Truk Dump Penuh)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="report-desc">Deskripsi Rinci Permasalahan</label>
+            <textarea id="report-desc" class="form-textarea" rows="3" placeholder="Jelaskan kondisi sampah..."
+              required></textarea>
+          </div>
+        </div>
+
+        <div class="step-content" id="step-content-3" style="display: none;">
+          <label class="form-label">Unggah Foto Bukti Sampah Lapangan:</label>
+          <div class="upload-dropzone" onclick="document.getElementById('report-file-input').click()">
+            <span class="material-symbols-outlined" style="font-size: 36px; color: var(--primary);">cloud_upload</span>
+            <div style="font-weight: 700; margin-top: 6px;">Klik untuk Memilih Foto</div>
+            <input type="file" id="report-file-input" accept="image/*" style="display: none;"
+              onchange="handlePhotoUpload(this)">
+          </div>
+          <img id="report-photo-preview" class="upload-preview" style="display: none;" alt="Pratinjau Foto">
+          <input type="hidden" id="report-photo-base64">
+        </div>
+
+        <div class="step-content" id="step-content-4" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="report-address">Alamat Lengkap Kejadian</label>
+            <input type="text" id="report-address" class="form-input" placeholder="Jl. Raden Intan, Enggal..." required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label class="form-label">Latitude</label>
+              <input type="number" step="any" id="report-lat" class="form-input" value="-5.4292">
+            </div>
+            <div>
+              <label class="form-label">Longitude</label>
+              <input type="number" step="any" id="report-lng" class="form-input" value="105.2625">
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="display: flex; justify-content: space-between; margin-top: 24px; border-top: 1px solid var(--surface-container-low); padding-top: 16px;">
+          <button type="button" class="btn-secondary" id="btn-prev-step" style="color: var(--on-surface);"
+            onclick="prevStep()" disabled>
+            Kembali
+          </button>
+          <button type="button" class="btn-primary" id="btn-next-step" onclick="nextStep()">
+            <span>Lanjutkan</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+          <button type="submit" class="btn-primary" id="btn-submit-step" style="display: none;">
+            <span class="material-symbols-outlined">send</span>
+            <span>Kirim Laporan Resmi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detail -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800;" id="detail-ticket-title">Detail Laporan</h2>
+        <button onclick="closeDetailModal()" style="background: none; border: none; cursor: pointer;">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="detail-body-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

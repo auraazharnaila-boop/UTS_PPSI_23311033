@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Petugas - Lampung Smart Waste</title>
+  
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#006B2C">
+  <link rel="icon" type="image/jpeg" href="assets/logo-bandarlampung.jpg">
+
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Leaflet GIS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="logos-container">
+          <img src="assets/logo-bandarlampung.jpg" alt="Logo Pemkot Bandar Lampung" class="logo-img" title="Pemerintah Kota Bandar Lampung">
+          <img src="assets/logo-teknokrat.png" alt="Logo Universitas Teknokrat Indonesia" class="logo-img" title="Universitas Teknokrat Indonesia">
+        </div>
+        <div class="brand-title">Lampung Smart Waste</div>
+        <div class="brand-subtitle">Operasional Lapangan DLH</div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-group-title">Menu Petugas</div>
+        <a href="petugas.html" class="nav-item active">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span>Dashboard Petugas</span>
+        </a>
+        <a href="#daftar-tugas" class="nav-item">
+          <span class="material-symbols-outlined">format_list_bulleted</span>
+          <span>Daftar Tugas Aktif</span>
+        </a>
+        <a href="#navigasi-gps" class="nav-item">
+          <span class="material-symbols-outlined">navigation</span>
+          <span>Rute Navigasi GIS</span>
+        </a>
+        <a href="index.html" class="nav-item">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Buka Master Hub</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-helpdesk">
+        <div class="helpdesk-header">
+          <span class="material-symbols-outlined" style="font-size: 16px;">support_agent</span>
+          <span>Posko Dispatch DLH</span>
+        </div>
+        <p style="color: var(--on-surface-variant); margin-bottom: 4px;">Radio VHF Saluran 04</p>
+        <div style="font-size: 11px; color: var(--outline);">Call Center Siaga: 112</div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="search-bar">
+            <span class="material-symbols-outlined" style="color: var(--outline); font-size: 18px;">search</span>
+            <input type="text" placeholder="Cari tiket tugas..." oninput="handleGlobalSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="clock-pill">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">schedule</span>
+            <span id="live-clock">12:00:00 WIB</span>
+          </div>
+
+          <a href="tel:112" class="hotline-btn">
+            <span class="material-symbols-outlined" style="font-size: 16px;">warning</span>
+            <span>Darurat 112</span>
+          </a>
+
+          <div class="user-profile-menu">
+            <div class="avatar-circle" style="background: var(--secondary);">B</div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700;">Budi Santoso</div>
+              <div style="font-size: 11px; color: var(--outline);">Regu Rajabasa 01 • ARM-DLH-07</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="page-container">
+        <!-- Top Operational Bar -->
+        <div style="background: var(--surface-container-lowest); border: 1px solid var(--surface-container); border-radius: var(--radius-lg); padding: 18px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="kpi-icon-wrap blue" style="width: 50px; height: 50px;">
+              <span class="material-symbols-outlined" style="font-size: 28px;">fire_truck</span>
+            </div>
+            <div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--on-surface);">Armada: ARM-DLH-07 (Dump Truck Isuzu Elf 4.5T)</div>
+              <div style="font-size: 12px; color: var(--outline);">Regu Rajabasa 01 • Penanggung Jawab: Budi Santoso</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="status-pill penanganan" style="font-size: 12px; padding: 6px 14px;">Status: Operasi Lapangan Aktif</span>
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Total Beban Tugas</div>
+              <div class="kpi-value" id="kpi-petugas-total">6</div>
+              <div class="kpi-desc">Hari ini</div>
+            </div>
+            <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">task</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Tugas Baru</div>
+              <div class="kpi-value" id="kpi-petugas-baru">2</div>
+              <div class="kpi-desc">Perlu respons cepat</div>
+            </div>
+            <div class="kpi-icon-wrap blue"><span class="material-symbols-outlined">fiber_new</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Sedang Dikerjakan</div>
+              <div class="kpi-value" id="kpi-petugas-proses">1</div>
+              <div class="kpi-desc">Pembersihan berjalan</div>
+            </div>
+            <div class="kpi-icon-wrap amber"><span class="material-symbols-outlined">hourglass_top</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <div class="kpi-label">Tugas Selesai</div>
+              <div class="kpi-value" id="kpi-petugas-selesai">3</div>
+              <div class="kpi-desc">Bukti terkirim</div>
+            </div>
+            <div class="kpi-icon-wrap green"><span class="material-symbols-outlined">done_all</span></div>
+          </div>
+        </div>
+
+        <!-- 2 Kolom -->
+        <div class="content-grid-2col">
+          <!-- Antrean Tugas -->
+          <div class="panel-card" id="daftar-tugas">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="material-symbols-outlined" style="color: var(--primary);">format_list_bulleted</span>
+                <span>Antrean Tugas Lapangan</span>
+              </div>
+              <span class="status-pill ditugaskan">Shift Berjalan</span>
+            </div>
+            <div id="officer-tasks-list" style="display: flex; flex-direction: column; gap: 14px;"></div>
+          </div>
+
+          <!-- Navigasi GIS & APD Checklist -->
+          <div>
+            <div class="panel-card" id="navigasi-gps">
+              <div class="panel-title" style="margin-bottom: 12px;">
+                <span class="material-symbols-outlined" style="color: var(--secondary);">navigation</span>
+                <span>Rute Navigasi GIS</span>
+              </div>
+              <div id="map-petugas" style="height: 240px; margin-bottom: 14px;"></div>
+              <div style="font-size: 12px; color: var(--on-surface-variant);">
+                Waypoint Aktif: <strong>Jl. Raden Intan No. 45 (LSW-2026-089)</strong>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 12px;">
+                <span class="material-symbols-outlined" style="color: var(--warning);">health_and_safety</span>
+                <span>Checklist Keselamatan Kerja (APD)</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" checked> Rompi Reflektif Keselamatan DLH
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" checked> Sarung Tangan Karet Tebal / Kulit
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" checked> Sepatu Safety Boot Anti-Tembus
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" checked> Masker Respiratori Anti Bau / Debu
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div>Copyright©2026 by Aura Azhar Naila dan Dr. Erliyan Redy Susanto, M.Kom</div>
+        <div style="font-size: 11px; color: var(--outline); margin-top: 4px;">
+          Pemerintah Kota Bandar Lampung • Dinas Lingkungan Hidup • Universitas Teknokrat Indonesia
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal Unggah Bukti Petugas -->
+  <div class="modal-overlay" id="modal-officer-proof">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--primary);">Unggah Bukti & Selesaikan Tugas</h2>
+        <button onclick="closeOfficerProofModal()" style="background: none; border: none; cursor: pointer;">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="officer-proof-form" onsubmit="submitOfficerProof(event)">
+        <input type="hidden" id="proof-report-id">
+        <div class="form-group">
+          <label class="form-label">Nomor Tiket & Lokasi</label>
+          <div id="proof-ticket-info" style="font-weight: 700; color: var(--secondary);"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ubah Status Tugas</label>
+          <select id="proof-status-select" class="form-select">
+            <option value="Dalam Penanganan">Dalam Penanganan (Armada Sedang Bekerja)</option>
+            <option value="Selesai">Selesai (Sampah Telah Diangkut Penuh)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Foto Bukti Hasil Pembersihan (Kondisi Sesudah):</label>
+          <div class="upload-dropzone" onclick="document.getElementById('proof-file-input').click()">
+            <span class="material-symbols-outlined" style="font-size: 32px; color: var(--primary);">add_a_photo</span>
+            <div style="font-size: 13px; font-weight: 700;">Unggah Foto Setelah Area Dibersihkan</div>
+            <input type="file" id="proof-file-input" accept="image/*" style="display: none;" onchange="handleProofPhotoUpload(this)">
+          </div>
+          <img id="proof-photo-preview" class="upload-preview" style="display: none;" alt="Bukti Sesudah">
+          <input type="hidden" id="proof-photo-base64">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catatan Hasil Penanganan Lapangan</label>
+          <textarea id="proof-officer-notes" class="form-textarea" rows="2" placeholder="Contoh: Sampah sebanyak 1 truk dump berhasil diangkut ke TPA Bakung."></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>Kirim Bukti Penanganan</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detail -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800;" id="detail-ticket-title">Detail Laporan</h2>
+        <button onclick="closeDetailModal()" style="background: none; border: none; cursor: pointer;">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="detail-body-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Set active role as Petugas on this page
+    document.addEventListener('DOMContentLoaded', () => {
+      switchRole('petugas');
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lampung Smart Waste - DLH Kota Bandar Lampung</title>
+
+  <!-- PWA Manifest & Theme Color -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#006B2C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/jpeg" href="assets/logo-bandarlampung.jpg">
+
+  <!-- Google Fonts: Inter & Material Symbols Outlined -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Leaflet GIS Map Library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js for Executive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="logos-container">
+          <img src="assets/logo-bandarlampung.jpg" alt="Logo Pemkot Bandar Lampung" class="logo-img"
+            title="Pemerintah Kota Bandar Lampung">
+          <img src="assets/logo-teknokrat.png" alt="Logo Universitas Teknokrat Indonesia" class="logo-img"
+            title="Universitas Teknokrat Indonesia">
+        </div>
+        <div class="brand-title">Lampung Smart Waste</div>
+        <div class="brand-subtitle">Smart City DLH Bandar Lampung</div>
+      </div>
+
+      <!-- Simulasi Mode / Role Switcher -->
+      <div class="role-badge-box">
+        <label for="role-selector"><span class="material-symbols-outlined" style="font-size: 13px;">swap_horiz</span>
+          Mode Tampilan</label>
+        <select id="role-selector" class="role-select" onchange="switchRole(this.value)">
+          <option value="masyarakat">Masyarakat (Warga)</option>
+          <option value="petugas">Petugas Kebersihan</option>
+          <option value="admin">Administrator DLH</option>
+        </select>
+      </div>
+
+      <!-- Navigasi Dinamis Berdasarkan Peran -->
+      <nav class="nav-menu" id="nav-menu">
+        <!-- Will be populated by JavaScript -->
+      </nav>
+
+      <!-- Sidebar Helpdesk -->
+      <div class="sidebar-helpdesk">
+        <div class="helpdesk-header">
+          <span class="material-symbols-outlined" style="font-size: 16px;">support_agent</span>
+          <span>Helpdesk 24/7 DLH</span>
+        </div>
+        <p style="color: var(--on-surface-variant); margin-bottom: 4px;">dlh@bandarlampungkota.go.id</p>
+        <div style="font-size: 11px; color: var(--outline);">Call Center Siaga: 112</div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN WRAPPER ==================== -->
+    <div class="main-wrapper">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="search-bar">
+            <span class="material-symbols-outlined" style="color: var(--outline); font-size: 18px;">search</span>
+            <input type="text" id="global-search" placeholder="Cari ID tiket, lokasi, kategori..."
+              oninput="handleGlobalSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Real-Time Clock WIB -->
+          <div class="clock-pill">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">schedule</span>
+            <span id="live-clock">12:00:00 WIB</span>
+          </div>
+
+          <!-- Emergency 112 Hotline -->
+          <a href="tel:112" class="hotline-btn">
+            <span class="material-symbols-outlined" style="font-size: 16px;">call</span>
+            <span>DLH 112</span>
+          </a>
+
+          <!-- Notifications Bell -->
+          <div style="position: relative; cursor: pointer;" onclick="toggleNotifDropdown()">
+            <span class="material-symbols-outlined"
+              style="font-size: 24px; color: var(--on-surface-variant);">notifications</span>
+            <span id="notif-badge"
+              style="position: absolute; top: -4px; right: -4px; background: var(--error); color: #fff; font-size: 10px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">2</span>
+
+            <!-- Notif Dropdown -->
+            <div id="notif-dropdown"
+              style="display: none; position: absolute; right: 0; top: 36px; width: 320px; background: #fff; border: 1px solid var(--surface-container); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 150; padding: 12px;">
+              <div
+                style="font-weight: 700; font-size: 13px; margin-bottom: 8px; border-bottom: 1px solid var(--surface-container-low); padding-bottom: 6px;">
+                Pemberitahuan Sistem</div>
+              <div id="notif-list" style="max-height: 240px; overflow-y: auto; font-size: 12px;"></div>
+            </div>
+          </div>
+
+          <!-- User Profile -->
+          <div class="user-profile-menu" onclick="openProfileModal()">
+            <div class="avatar-circle" id="user-avatar">A</div>
+            <div style="text-align: left; line-height: 1.2;">
+              <div id="user-name-display" style="font-size: 13px; font-weight: 700;">Aura Azhar Naila</div>
+              <div id="user-role-display" style="font-size: 11px; color: var(--outline);">Masyarakat</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content Views -->
+      <main class="page-container" id="main-content">
+        <!-- ================= VIEW: MASYARAKAT ================= -->
+        <section id="view-masyarakat" class="role-view">
+          <!-- Hero Banner -->
+          <div class="hero-banner">
+            <div class="hero-text">
+              <h1 id="greeting-text">Selamat Datang di Portal Warga Bersih!</h1>
+              <p>Mari jaga kebersihan Kota Tapis Berseri. Laporkan tumpukan sampah liar, limbah drainase, atau TPS
+                meluap di lingkungan Anda agar segera diangkut armada DLH.</p>
+            </div>
+            <div class="hero-actions">
+              <button class="btn-primary" onclick="openReportModal()">
+                <span class="material-symbols-outlined">add_photo_alternate</span>
+                <span>Buat Laporan Sampah</span>
+              </button>
+              <button class="btn-secondary" onclick="scrollToMap()">
+                <span class="material-symbols-outlined">location_on</span>
+                <span>Cek Wilayah Saya</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Total Laporan Saya</div>
+                <div class="kpi-value" id="kpi-warga-total">5</div>
+                <div class="kpi-desc">Akumulasi pengaduan</div>
+              </div>
+              <div class="kpi-icon-wrap green">
+                <span class="material-symbols-outlined">assignment</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Sedang Diproses</div>
+                <div class="kpi-value" id="kpi-warga-proses">2</div>
+                <div class="kpi-desc">Dalam penanganan regu</div>
+              </div>
+              <div class="kpi-icon-wrap blue">
+                <span class="material-symbols-outlined">local_shipping</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Laporan Selesai</div>
+                <div class="kpi-value" id="kpi-warga-selesai">2</div>
+                <div class="kpi-desc">Telah bersih & ditutup</div>
+              </div>
+              <div class="kpi-icon-wrap green">
+                <span class="material-symbols-outlined">check_circle</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Ditolak / Revisi</div>
+                <div class="kpi-value" id="kpi-warga-ditolak">1</div>
+                <div class="kpi-desc">Perlu verifikasi ulang</div>
+              </div>
+              <div class="kpi-icon-wrap red">
+                <span class="material-symbols-outlined">cancel</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 Columns: Laporan Terkini & Peta + Panel Info -->
+          <div class="content-grid-2col">
+            <!-- Kolom Kiri: Laporan Terkini & Peta -->
+            <div>
+              <div class="panel-card">
+                <div class="panel-header">
+                  <div class="panel-title">
+                    <span class="material-symbols-outlined" style="color: var(--primary);">history</span>
+                    <span>Laporan Terkini Saya</span>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="status-pill penanganan" onclick="filterWargaReports('Semua')">Semua</button>
+                    <button class="status-pill ditugaskan" onclick="filterWargaReports('Proses')">Diproses</button>
+                    <button class="status-pill selesai" onclick="filterWargaReports('Selesai')">Selesai</button>
+                  </div>
+                </div>
+
+                <div class="custom-table-wrap">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Tiket</th>
+                        <th>Kategori</th>
+                        <th>Lokasi Kejadian</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="warga-reports-tbody">
+                      <!-- Populated by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Peta Sebaran Titik Laporan -->
+              <div class="panel-card" id="map-section">
+                <div class="panel-header">
+                  <div class="panel-title">
+                    <span class="material-symbols-outlined" style="color: var(--secondary);">map</span>
+                    <span>Peta Sebaran Laporan Wilayah Bandar Lampung</span>
+                  </div>
+                  <span style="font-size: 12px; color: var(--outline);">Radius Kota Bandar Lampung</span>
+                </div>
+                <div id="map-warga"></div>
+              </div>
+            </div>
+
+            <!-- Kolom Kanan: Panel Poin, Jadwal Truk, & Edukasi -->
+            <div>
+              <!-- Poin Warga Bersih -->
+              <div class="panel-card" style="background: linear-gradient(135deg, #FAF8FF, #EAEDFF);">
+                <div class="panel-title" style="margin-bottom: 12px;">
+                  <span class="material-symbols-outlined" style="color: #D97706;">workspace_premium</span>
+                  <span>Poin Warga Bersih</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
+                  <span style="font-size: 32px; font-weight: 800; color: var(--primary);"
+                    id="warga-points-val">340</span>
+                  <span style="font-weight: 600; font-size: 13px; color: var(--outline);">Poin Terkumpul</span>
+                </div>
+                <p style="font-size: 12px; color: var(--on-surface-variant); margin-bottom: 12px;">Level: <strong>Warga
+                    Peduli Lingkungan</strong>. Tukarkan poin dengan insentif retribusi atau bibit tanaman kota.</p>
+                <button class="btn-primary" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px;"
+                  onclick="alert('Katalog Reward: \n1. Pengurangan Retribusi Sampah 20%\n2. Bibit Pohon Peneduh DLH\n3. Tumbler Eco Smart City')">
+                  Katalog Penukaran Poin
+                </button>
+              </div>
+
+              <!-- Jadwal Truk Angkut DLH -->
+              <div class="panel-card">
+                <div class="panel-title" style="margin-bottom: 12px;">
+                  <span class="material-symbols-outlined" style="color: var(--secondary);">schedule</span>
+                  <span>Jadwal Truk DLH</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+                  <div
+                    style="padding: 10px; background: var(--surface-container-low); border-radius: var(--radius-sm); border-left: 3px solid var(--primary);">
+                    <div style="font-weight: 700; color: var(--primary);">Shift Pagi (06:00 - 09:00 WIB)</div>
+                    <div style="color: var(--outline);">Protokol Jl. Raden Intan, Enggal, Bambu Kuning</div>
+                  </div>
+                  <div
+                    style="padding: 10px; background: var(--surface-container-low); border-radius: var(--radius-sm); border-left: 3px solid var(--secondary);">
+                    <div style="font-weight: 700; color: var(--secondary);">Shift Sore (16:00 - 18:30 WIB)</div>
+                    <div style="color: var(--outline);">Kedaton, Sukarame, Rajabasa, Way Halim</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Edukasi Pilah Sampah -->
+              <div class="panel-card">
+                <div class="panel-title" style="margin-bottom: 10px;">
+                  <span class="material-symbols-outlined" style="color: var(--tertiary);">compost</span>
+                  <span>Edukasi Pilah Sampah</span>
+                </div>
+                <p style="font-size: 12px; color: var(--on-surface-variant); line-height: 1.6;">
+                  Pisahkan sampah organik (sisa makanan) dan sampah anorganik (botol, kantong kresek) ke dalam wadah
+                  berbeda sebelum diangkut petugas.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: PETUGAS KEBERSIHAN ================= -->
+        <section id="view-petugas" class="role-view" style="display: none;">
+          <!-- Top Operational Bar -->
+          <div
+            style="background: var(--surface-container-lowest); border: 1px solid var(--surface-container); border-radius: var(--radius-lg); padding: 18px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="kpi-icon-wrap blue" style="width: 50px; height: 50px;">
+                <span class="material-symbols-outlined" style="font-size: 28px;">fire_truck</span>
+              </div>
+              <div>
+                <div style="font-size: 16px; font-weight: 800; color: var(--on-surface);">Armada: ARM-DLH-07 (Dump Truck
+                  4.5T)</div>
+                <div style="font-size: 12px; color: var(--outline);">Regu Rajabasa 01 • Penanggung Jawab: Budi Santoso
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="status-pill penanganan" style="font-size: 12px; padding: 6px 14px;">Status: Operasi Lapangan
+                Aktif</span>
+              <button class="hotline-btn" onclick="alert('Panggilan darurat terhubung ke Posko DLH Bandar Lampung!')">
+                <span class="material-symbols-outlined" style="font-size: 16px;">warning</span>
+                <span>Peringatan Darurat</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Petugas -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Total Beban Tugas</div>
+                <div class="kpi-value" id="kpi-petugas-total">6</div>
+                <div class="kpi-desc">Hari ini</div>
+              </div>
+              <div class="kpi-icon-wrap green">
+                <span class="material-symbols-outlined">task</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Tugas Baru</div>
+                <div class="kpi-value" id="kpi-petugas-baru">2</div>
+                <div class="kpi-desc">Perlu segera direspons</div>
+              </div>
+              <div class="kpi-icon-wrap blue">
+                <span class="material-symbols-outlined">fiber_new</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Sedang Dikerjakan</div>
+                <div class="kpi-value" id="kpi-petugas-proses">1</div>
+                <div class="kpi-desc">Pembersihan berjalan</div>
+              </div>
+              <div class="kpi-icon-wrap amber">
+                <span class="material-symbols-outlined">hourglass_top</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Tugas Selesai</div>
+                <div class="kpi-value" id="kpi-petugas-selesai">3</div>
+                <div class="kpi-desc">Bukti terkirim</div>
+              </div>
+              <div class="kpi-icon-wrap green">
+                <span class="material-symbols-outlined">done_all</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Antrean Tugas & Navigasi Dispatch -->
+          <div class="content-grid-2col">
+            <!-- Antrean Tugas Lapangan -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span class="material-symbols-outlined" style="color: var(--primary);">format_list_bulleted</span>
+                  <span>Antrean Tugas Lapangan Petugas</span>
+                </div>
+                <span class="status-pill ditugaskan">Shift Berjalan</span>
+              </div>
+
+              <div id="officer-tasks-list" style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- Rute GIS & Safety Checklist -->
+            <div>
+              <div class="panel-card">
+                <div class="panel-title" style="margin-bottom: 12px;">
+                  <span class="material-symbols-outlined" style="color: var(--secondary);">navigation</span>
+                  <span>Navigasi & Titik Waypoint</span>
+                </div>
+                <div id="map-petugas" style="height: 240px; margin-bottom: 14px;"></div>
+                <div style="font-size: 12px; color: var(--on-surface-variant);">
+                  Waypoint Aktif: <strong>Jl. Raden Intan No. 45 (LSW-2026-089)</strong>
+                </div>
+              </div>
+
+              <!-- Checklist Keselamatan APD -->
+              <div class="panel-card">
+                <div class="panel-title" style="margin-bottom: 12px;">
+                  <span class="material-symbols-outlined" style="color: var(--warning);">health_and_safety</span>
+                  <span>Checklist Keselamatan Kerja (APD)</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+                  <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" checked> Rompi Reflektif Keselamatan DLH
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" checked> Sarung Tangan Karet Tebal / Kulit
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" checked> Sepatu Safety Boot Anti-Tembus
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" checked> Masker Respiratori Anti Bau / Debu
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: ADMINISTRATOR SMART CITY ================= -->
+        <section id="view-admin" class="role-view" style="display: none;">
+          <!-- Top Command Bar -->
+          <div
+            style="background: linear-gradient(135deg, #131B2E, #23314F); color: #fff; border-radius: var(--radius-lg); padding: 20px 28px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.3px;">Pusat Kendali Smart City DLH
+                Bandar Lampung</div>
+              <div style="font-size: 13px; color: #E2E7FF;">Monitoring Real-time Penanganan Sampah Wilayah Perkotaan
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <span class="status-pill penanganan" style="background: #316BF3; color: #fff;">18 Armada Beroperasi</span>
+              <button class="btn-primary" style="font-size: 12px; padding: 8px 16px;" onclick="refreshAdminData()">
+                <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+                <span>Segarkan Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Eksekutif -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Total Aduan Masuk</div>
+                <div class="kpi-value" id="admin-kpi-total">128</div>
+                <div class="kpi-desc">Bulan November 2026</div>
+              </div>
+              <div class="kpi-icon-wrap blue">
+                <span class="material-symbols-outlined">analytics</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Tingkat Penyelesaian</div>
+                <div class="kpi-value" id="admin-kpi-rate">88%</div>
+                <div class="kpi-desc">+4.2% dari target DLH</div>
+              </div>
+              <div class="kpi-icon-wrap green">
+                <span class="material-symbols-outlined">verified</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Respons Rata-rata</div>
+                <div class="kpi-value" id="admin-kpi-response">1.4 Jam</div>
+                <div class="kpi-desc">Waktu tanggap verifikasi</div>
+              </div>
+              <div class="kpi-icon-wrap amber">
+                <span class="material-symbols-outlined">speed</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <div class="kpi-label">Menunggu Verifikasi</div>
+                <div class="kpi-value" id="admin-kpi-waiting">4</div>
+                <div class="kpi-desc">Butuh tindakan segera</div>
+              </div>
+              <div class="kpi-icon-wrap red">
+                <span class="material-symbols-outlined">pending_actions</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Peta Spasial & Live Telemetry Heatmap -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="material-symbols-outlined" style="color: var(--secondary);">radar</span>
+                <span>Pemantauan Geografis & Sebaran Titik Sampah Kota Bandar Lampung</span>
+              </div>
+              <span class="status-pill penanganan">Live Telemetry GIS</span>
+            </div>
+            <div id="map-admin" style="height: 380px;"></div>
+          </div>
+
+          <!-- Matriks 4 Grafik Eksekutif (Grid 2x2) -->
+          <div class="admin-charts-grid">
+            <!-- 1. Tren Bulanan -->
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 14px;">
+                <span class="material-symbols-outlined" style="color: var(--primary);">show_chart</span>
+                <span>Tren Laporan Sampah (6 Bulan Terakhir)</span>
+              </div>
+              <canvas id="chart-tren-bulanan" height="200"></canvas>
+            </div>
+
+            <!-- 2. Top 5 Kecamatan -->
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 14px;">
+                <span class="material-symbols-outlined" style="color: var(--secondary);">bar_chart</span>
+                <span>5 Kecamatan dengan Laporan Terbanyak</span>
+              </div>
+              <canvas id="chart-top-kecamatan" height="200"></canvas>
+            </div>
+
+            <!-- 3. Distribusi Status -->
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 14px;">
+                <span class="material-symbols-outlined" style="color: var(--tertiary);">pie_chart</span>
+                <span>Distribusi Status Penyelesaian Laporan</span>
+              </div>
+              <canvas id="chart-status-doughnut" height="200"></canvas>
+            </div>
+
+            <!-- 4. Komposisi Kategori Sampah -->
+            <div class="panel-card">
+              <div class="panel-title" style="margin-bottom: 14px;">
+                <span class="material-symbols-outlined" style="color: #D97706;">category</span>
+                <span>Komposisi Kategori Jenis Sampah</span>
+              </div>
+              <canvas id="chart-kategori-bar" height="200"></canvas>
+            </div>
+          </div>
+
+          <!-- Antrean Verifikasi & Disposisi Cepat -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="material-symbols-outlined" style="color: var(--primary);">rule</span>
+                <span>Antrean Verifikasi & Penugasan Laporan</span>
+              </div>
+              <span style="font-size: 12px; color: var(--outline);">Klik tindakan untuk memproses laporan</span>
+            </div>
+
+            <div class="custom-table-wrap">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Tiket & Tanggal</th>
+                    <th>Pelapor</th>
+                    <th>Kategori & Alamat</th>
+                    <th>Status Saat Ini</th>
+                    <th>Petugas Terpilih</th>
+                    <th>Aksi Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-reports-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ================= FOOTER IDENTITAS ================= -->
+      <footer class="app-footer">
+        <div>Copyright©2026 by Aura Azhar Naila dan Dr. Erliyan Redy Susanto, M.Kom</div>
+        <div style="font-size: 11px; color: var(--outline); margin-top: 4px;">
+          Pemerintah Kota Bandar Lampung • Dinas Lingkungan Hidup • Universitas Teknokrat Indonesia
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BUAT LAPORAN CEPAT (STEPPER) ================= -->
+  <div class="modal-overlay" id="modal-report">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--primary);">Buat Laporan Sampah Baru</h2>
+        <button onclick="closeReportModal()"
+          style="background: none; border: none; cursor: pointer; color: var(--outline);">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Stepper 4 Tahap -->
+      <div class="stepper-header">
+        <div class="step-item active" id="step-btn-1" onclick="goToStep(1)">
+          <div class="step-number">1</div>
+          <div class="step-title">Kategori</div>
+        </div>
+        <div class="step-item" id="step-btn-2" onclick="goToStep(2)">
+          <div class="step-number">2</div>
+          <div class="step-title">Deskripsi</div>
+        </div>
+        <div class="step-item" id="step-btn-3" onclick="goToStep(3)">
+          <div class="step-number">3</div>
+          <div class="step-title">Foto Bukti</div>
+        </div>
+        <div class="step-item" id="step-btn-4" onclick="goToStep(4)">
+          <div class="step-number">4</div>
+          <div class="step-title">Lokasi</div>
+        </div>
+      </div>
+
+      <!-- Form Content Step-by-Step -->
+      <form id="report-form" onsubmit="submitReportForm(event)">
+        <!-- STEP 1: Kategori -->
+        <div class="step-content" id="step-content-1">
+          <label class="form-label">Pilih Kategori Sampah yang Dilaporkan:</label>
+          <div class="category-card-grid" id="category-radio-container">
+            <!-- Populated by JS -->
+          </div>
+          <input type="hidden" id="form-selected-category" value="cat-1">
+        </div>
+
+        <!-- STEP 2: Deskripsi & Volume -->
+        <div class="step-content" id="step-content-2" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="report-title">Judul Singkat Kejadian</label>
+            <input type="text" id="report-title" class="form-input"
+              placeholder="Contoh: Tumpukan kresek di depan ruko kosong" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="report-volume">Estimasi Volume Sampah</label>
+            <select id="report-volume" class="form-select">
+              <option value="± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)">± 0.5 - 1.0 m³ (1 Bak Motor Roda Tiga)</option>
+              <option value="± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)">± 2.0 - 3.0 m³ (1 Bak Mobil Pick-up)</option>
+              <option value="± 4.0 - 6.0 m³ (1 Truk Dump Penuh)">± 4.0 - 6.0 m³ (1 Truk Dump Penuh)</option>
+              <option value="> 6.0 m³ (Tumpukan Besar Darurat)">> 6.0 m³ (Tumpukan Besar Darurat)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="report-desc">Deskripsi Rinci Permasalahan</label>
+            <textarea id="report-desc" class="form-textarea" rows="3"
+              placeholder="Jelaskan kondisi sampah, bau, bahaya saluran air, dll." required></textarea>
+          </div>
+
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="report-anonymous"> Laporkan secara anonim (Nama tidak dipublikasikan ke umum)
+          </label>
+        </div>
+
+        <!-- STEP 3: Foto Bukti -->
+        <div class="step-content" id="step-content-3" style="display: none;">
+          <label class="form-label">Unggah Foto Bukti Sampah Lapangan:</label>
+          <div class="upload-dropzone" onclick="document.getElementById('report-file-input').click()">
+            <span class="material-symbols-outlined" style="font-size: 36px; color: var(--primary);">cloud_upload</span>
+            <div style="font-weight: 700; margin-top: 6px;">Klik atau Tarik Berkas Foto ke Sini</div>
+            <div style="font-size: 11px; color: var(--outline);">Format JPG, PNG, atau WebP (Maks. 5MB)</div>
+            <input type="file" id="report-file-input" accept="image/*" style="display: none;"
+              onchange="handlePhotoUpload(this)">
+          </div>
+          <img id="report-photo-preview" class="upload-preview" style="display: none;" alt="Pratinjau Foto">
+          <input type="hidden" id="report-photo-base64">
+        </div>
+
+        <!-- STEP 4: Lokasi Kejadian -->
+        <div class="step-content" id="step-content-4" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="report-address">Alamat Lengkap / Patokan Lokasi</label>
+            <input type="text" id="report-address" class="form-input"
+              placeholder="Jl. Raden Intan No..., dekat bundaran Enggal" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label class="form-label">Latitude</label>
+              <input type="number" step="any" id="report-lat" class="form-input" value="-5.4292">
+            </div>
+            <div>
+              <label class="form-label">Longitude</label>
+              <input type="number" step="any" id="report-lng" class="form-input" value="105.2625">
+            </div>
+          </div>
+
+          <button type="button" class="btn-secondary"
+            style="color: var(--primary); border-color: var(--primary); width: 100%; justify-content: center; margin-bottom: 12px;"
+            onclick="useCurrentGeolocation()">
+            <span class="material-symbols-outlined">my_location</span>
+            <span>Gunakan Titik GPS Saya Saat Ini</span>
+          </button>
+        </div>
+
+        <!-- Stepper Navigation Footer -->
+        <div
+          style="display: flex; justify-content: space-between; margin-top: 24px; border-top: 1px solid var(--surface-container-low); padding-top: 16px;">
+          <button type="button" class="btn-secondary" id="btn-prev-step" style="color: var(--on-surface);"
+            onclick="prevStep()" disabled>
+            Kembali
+          </button>
+
+          <button type="button" class="btn-primary" id="btn-next-step" onclick="nextStep()">
+            <span>Lanjutkan</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+
+          <button type="submit" class="btn-primary" id="btn-submit-step" style="display: none;">
+            <span class="material-symbols-outlined">send</span>
+            <span>Kirim Laporan Resmi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: DETAIL LAPORAN & HISTORI ================= -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--on-surface);" id="detail-ticket-title">Detail Laporan
+        </h2>
+        <button onclick="closeDetailModal()"
+          style="background: none; border: none; cursor: pointer; color: var(--outline);">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div id="detail-body-content">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: UNGGAH BUKTI PETUGAS ================= -->
+  <div class="modal-overlay" id="modal-officer-proof">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--primary);">Unggah Bukti & Selesaikan Tugas</h2>
+        <button onclick="closeOfficerProofModal()"
+          style="background: none; border: none; cursor: pointer; color: var(--outline);">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="officer-proof-form" onsubmit="submitOfficerProof(event)">
+        <input type="hidden" id="proof-report-id">
+
+        <div class="form-group">
+          <label class="form-label">Nomor Tiket & Lokasi</label>
+          <div id="proof-ticket-info" style="font-weight: 700; color: var(--secondary);"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ubah Status Tugas</label>
+          <select id="proof-status-select" class="form-select">
+            <option value="Dalam Penanganan">Dalam Penanganan (Armada Sedang Bekerja)</option>
+            <option value="Selesai">Selesai (Sampah Telah Diangkut Penuh)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Foto Bukti Hasil Pembersihan (Kondisi Sesudah):</label>
+          <div class="upload-dropzone" onclick="document.getElementById('proof-file-input').click()">
+            <span class="material-symbols-outlined" style="font-size: 32px; color: var(--primary);">add_a_photo</span>
+            <div style="font-size: 13px; font-weight: 700;">Unggah Foto Setelah Area Dibersihkan</div>
+            <input type="file" id="proof-file-input" accept="image/*" style="display: none;"
+              onchange="handleProofPhotoUpload(this)">
+          </div>
+          <img id="proof-photo-preview" class="upload-preview" style="display: none;" alt="Bukti Sesudah">
+          <input type="hidden" id="proof-photo-base64">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Hasil Penanganan Lapangan</label>
+          <textarea id="proof-officer-notes" class="form-textarea" rows="2"
+            placeholder="Contoh: Sampah sebanyak 1 truk 4.5 ton berhasil diangkut ke TPA Bakung, area disemprot bersih."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>Kirim Bukti Penanganan</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('🌿 Service Worker Registered!', reg))
+          .catch(err => console.warn('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+
+</html>
